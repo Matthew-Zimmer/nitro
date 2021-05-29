@@ -3,7 +3,7 @@ export * from './generator';
 export * from './stack';
 export * from './translator';
 export * from './binder';
-export * from './typename';
+export * from './type_util';
 
 // import * as fs from 'fs/promises';
 // import { nitro } from './formal';

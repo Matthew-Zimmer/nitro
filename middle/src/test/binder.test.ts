@@ -81,12 +81,11 @@ describe('class environment tests', () => {
     });
 });
 
-
 describe('bind expressions', () => {
     test('bind integer expression', () => {
         const b = test_stack_for(binder);
 
-        b.integer({
+        b.expression({
             kind: 'integer',
             value: 2
         });
@@ -104,7 +103,7 @@ describe('bind expressions', () => {
     test('bind floating point expression', () => {
         const b = test_stack_for(binder);
 
-        b.floating_point({
+        b.expression({
             kind: 'floating_point',
             value: 2.9
         });
@@ -122,7 +121,7 @@ describe('bind expressions', () => {
     test('bind boolean expression', () => {
         const b = test_stack_for(binder);
 
-        b.boolean({
+        b.expression({
             kind: 'boolean',
             value: true
         });
@@ -141,7 +140,7 @@ describe('bind expressions', () => {
         test('bind unknown identifier expression', () => {
             const b = test_stack_for(binder);
 
-            expect(() => b.identifier({
+            expect(() => b.expression({
                 kind: 'identifier',
                 value: 'x'
             })).
@@ -153,7 +152,7 @@ describe('bind expressions', () => {
 
             (b as any as { name_env: environment }).name_env.set('x', { kind: 'int' });
 
-            b.identifier({
+            b.expression({
                 kind: 'identifier',
                 value: 'x'
             });
@@ -175,7 +174,7 @@ describe('bind expressions', () => {
             (b as any as { type_env: class_environment }).type_env.set({ kind: 'classname', name: 'a' }, [['y', { kind: 'int' }]]);
             (b as any as { name_env: environment }).name_env.set('x', { kind: 'classname', name: 'a' });
 
-            b.identifier({
+            b.expression({
                 kind: 'identifier',
                 value: 'x',
                 next: {
@@ -205,7 +204,7 @@ describe('bind expressions', () => {
 
             (b as any as { name_env: environment }).name_env.set('x', { kind: 'int' });
 
-            const f = () => b.identifier({
+            const f = () => b.expression({
                 kind: 'identifier',
                 value: 'x',
                 next: {
@@ -215,6 +214,152 @@ describe('bind expressions', () => {
             });
             
             expect(f).toThrowError(new compile_error('int is not a class'));
+        });
+    });
+
+    describe('bind function call expressions', () => {
+        test('bind correct function call expression', () => {
+            const b = test_stack_for(binder);
+
+            (b as any as { name_env:  environment }).name_env.set('f', {
+                kind: 'func',
+                args: [{
+                    kind: 'int'
+                }, {
+                    kind: 'int'
+                }],
+                ret: { kind: 'void' }
+            });
+
+            b.function_call({
+                kind: 'function_call',
+                func: { 
+                    kind: 'identifier',
+                    value: 'f',
+                },
+                parameters: [{
+                    kind: 'integer',
+                    value: 1
+                }, {
+                    kind: 'integer',
+                    value: 2
+                }]
+            });
+
+            expect(b.working_stack).toStrictEqual([{
+                kind: 'expression',
+                value: {
+                    kind: 'function_call',
+                    func: { 
+                        kind: 'identifier',
+                        value: 'f',
+                        type: {
+                            kind: 'func',
+                            args: [{
+                                kind: 'int'
+                            }, {
+                                kind: 'int'
+                            }],
+                            ret: { kind: 'void' }
+                        },
+                        next:  undefined
+                    },
+                    parameters: [{
+                        kind: 'integer',
+                        value: 1,
+                        type: { kind: 'int' }
+                    }, {
+                        kind: 'integer',
+                        value: 2,
+                        type: { kind: 'int' }
+                    }],
+                    type: {
+                        kind: 'void'
+                    }
+                }
+            }]);
+        });
+
+        test('bind not enough args function call expression', () => {
+            const b = test_stack_for(binder);
+
+            (b as any as { name_env:  environment }).name_env.set('f', {
+                kind: 'func',
+                args: [{
+                    kind: 'int'
+                }, {
+                    kind: 'int'
+                }],
+                ret: { kind: 'void' }
+            });
+
+            const f = () => b.function_call({
+                kind: 'function_call',
+                func: { 
+                    kind: 'identifier',
+                    value: 'f',
+                },
+                parameters: [{
+                    kind: 'integer',
+                    value: 1
+                }]
+            });
+
+            expect(f).toThrowError(new compile_error('f expected 2 parameters but got 1'));
+        });
+
+        test('bind invalid parameter type function call expression', () => {
+            const b = test_stack_for(binder);
+
+            (b as any as { name_env:  environment }).name_env.set('f', {
+                kind: 'func',
+                args: [{
+                    kind: 'int'
+                }, {
+                    kind: 'int'
+                }],
+                ret: { kind: 'void' }
+            });
+
+            const f = () => b.function_call({
+                kind: 'function_call',
+                func: { 
+                    kind: 'identifier',
+                    value: 'f',
+                },
+                parameters: [{
+                    kind: 'integer',
+                    value: 1
+                }, {
+                    kind: 'floating_point',
+                    value: 1.6
+                }]
+            });
+
+            expect(f).toThrowError(new compile_error('f expected (int, int) but got (int, float)'));
+        });
+
+        test('bind invalid function type function call expression', () => {
+            const b = test_stack_for(binder);
+
+            (b as any as { name_env:  environment }).name_env.set('f', { kind: 'int' });
+
+            const f = () => b.function_call({
+                kind: 'function_call',
+                func: { 
+                    kind: 'identifier',
+                    value: 'f',
+                },
+                parameters: [{
+                    kind: 'integer',
+                    value: 1
+                }, {
+                    kind: 'floating_point',
+                    value: 1.6
+                }]
+            });
+
+            expect(f).toThrowError(new compile_error('can not call non function type: int'));
         });
     });
 });

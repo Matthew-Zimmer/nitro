@@ -1,5 +1,6 @@
 import { nitro } from "./formal";
 import { stack } from "./stack";
+import { pretty_typename, type_comparer } from "./type_util";
 
 type binder_map = {
     definition: nitro.tast.definition,
@@ -114,14 +115,47 @@ export class binder extends stack<binder_map> {
         const value = node.value;
         const type = this.name_env.get(value);
         const next = !node.next ? undefined : (() => {
-            if (type.kind !== 'classname')
-                throw new compile_error(`??? is not a class`);
+            if (type.kind !== 'classname') {
+                const pt = new pretty_typename();
+                throw new compile_error(`${pt.type(type)} is not a class`);
+            }
             return this.name_env.scope(this.type_env.get(type), () => {
                 return this.identifier(node.next!).pop();
             });
         })();
         this.push('expression', { kind: 'identifier', value, type, next });
         return this.consumer<nitro.tast.identifier>()('expression');
+    }
+
+    function_call = (node: nitro.ast.function_call) => {
+        const func = this.expression(node.func).pop();
+        const type = func.type;
+        if (type.kind !== 'func') {
+            const pt = new pretty_typename();
+            throw new compile_error(`can not call non function type: ${pt.type(type)}`);
+        }
+
+        const parameters = node.parameters.map(x => this.expression(x).pop());
+
+        if (parameters.length !== type.args.length) {
+            const name = func.kind === 'identifier' ? func.value : 'unnamed';
+            throw new compile_error(`${name} expected ${type.args.length} parameters but got ${parameters.length}`);
+        }
+
+        const tc = new type_comparer();
+        for (let i = 0; i < parameters.length; i++)
+            if (!tc.satisfies(parameters[i].type, type.args[i])) {
+                const pt = new pretty_typename();
+                const name = func.kind === 'identifier' ? func.value : 'unnamed';
+                throw new compile_error(`${name} expected (${type.args.map(pt.type).join(', ')}) but got (${parameters.map(x => pt.type(x.type)).join(', ')})`);
+            }
+        
+        this.push('expression', { kind: 'function_call', func, parameters, type: type.ret });
+        return this.consumer<nitro.tast.function_call>()('expression');
+    }
+
+    add_expression = (node: nitro.ast.add_expression) => {
+        return this.consumer<nitro.tast.add_expression>()('expression');
     }
 
     expression = (node: nitro.ast.expression) => {

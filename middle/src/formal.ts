@@ -59,7 +59,7 @@ export namespace nitro {
     export namespace ast {
         export type definition = {};
         export type statement = {};
-        export type expression = integer | floating_point | boolean_t | identifier;
+        export type expression = integer | floating_point | boolean_t | identifier | function_call | add_expression;
 
         export interface integer {
             value: number;
@@ -80,6 +80,19 @@ export namespace nitro {
             value: string;
             next?: identifier;
             kind: 'identifier';
+        }
+
+        export interface function_call {
+            func: expression;
+            parameters:  expression[];
+            kind: 'function_call';
+        }
+
+        export interface add_expression {
+            left: expression;
+            right: expression;
+            op: '+' | '-';
+            kind: 'add_expression';
         }
     }
 
@@ -188,6 +201,7 @@ export namespace nitro {
         export interface function_call {
             func: expression;
             parameters: expression[];
+            type: type;
             kind: 'function_call';
         }
 

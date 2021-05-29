@@ -43,7 +43,7 @@ describe('translate expressions', () => {
 
         const t = test_stack_for(translator);
 
-        t.function_call({ kind: 'function_call', func: { kind: 'identifier', value: 'f', type: { kind: 'func', args: [], ret: { kind: 'int' } } }, parameters: [] });
+        t.function_call({ kind: 'function_call', func: { kind: 'identifier', value: 'f', type: { kind: 'func', args: [], ret: { kind: 'int' } } }, parameters: [], type: { kind: 'int' } });
 
         expect(t.working_stack).toStrictEqual([
             { kind: 'expression', value: { kind: 'function_call', func: { kind: 'identifier', value: 'f', is_pointer: false, next: undefined }, parameters: [] } }
