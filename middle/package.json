@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test:dev": "jest --watch",
-    "compile:dev": "tsc --watch"
+    "compile:dev": "tsc --watch",
+    "start": "node build/index.js",
+    "start:dev": "watch -p 'src/*.ts' -c 'sleep 1 && node build/index.js'"
   },
   "author": "",
   "license": "ISC",
@@ -13,6 +15,7 @@
     "@types/jest": "^26.0.23",
     "@types/node": "^15.6.1",
     "jest": "^27.0.1",
-    "ts-jest": "^27.0.1"
+    "ts-jest": "^27.0.1",
+    "watch-cli": "^0.2.3"
   }
 }
