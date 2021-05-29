@@ -57,7 +57,30 @@ export namespace nitro {
     }
 
     export namespace ast {
-        
+        export type definition = {};
+        export type statement = {};
+        export type expression = integer | floating_point | boolean_t | identifier;
+
+        export interface integer {
+            value: number;
+            kind: 'integer';
+        }
+
+        export interface floating_point {
+            value: number;
+            kind: 'floating_point';
+        }
+
+        export interface boolean_t {
+            value: boolean;
+            kind: 'boolean';
+        }
+
+        export interface identifier {
+            value: string;
+            next?: identifier;
+            kind: 'identifier';
+        }
     }
 
     export namespace tast {
