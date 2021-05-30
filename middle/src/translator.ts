@@ -301,6 +301,10 @@ export class translator extends stack<translator_map> {
         return this.consumer<c.types.int>()('type');
     }
 
+    union = (node: nitro.types.union) => {
+        throw 'todo';
+    }
+
     type = (node: nitro.type) => {
         return this[node.kind](node as any);
     }

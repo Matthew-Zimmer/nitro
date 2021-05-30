@@ -1,6 +1,6 @@
 export namespace nitro {
 
-    export type type = types.int | types.literal_int | types.void_t | types.float | types.literal_float | types.pointer | types.classname | types.func | types.bool | types.literal_bool;
+    export type type = types.int | types.literal_int | types.void_t | types.float | types.literal_float | types.pointer | types.classname | types.func | types.bool | types.literal_bool | types.union;
     export type compile_type = type;
 
     export namespace types {
@@ -54,12 +54,69 @@ export namespace nitro {
         export interface class_func extends func {
             args: [pointer<classname>, ...type[]];
         }
+
+        export interface union<T extends type[] = type[]> {
+            types: [...T];
+            kind: 'union';
+        }
     }
 
     export namespace ast {
-        export type definition = {};
-        export type statement = {};
-        export type expression = integer | floating_point | boolean_t | identifier | function_call | add_expression;
+        export type definition = variable_definition | function_definition | class_definition;
+        export type statement = group_statement | if_statement;
+        export type expression = integer | floating_point | boolean_t | identifier | function_call | add_expression | mul_expression | cmp_expression | and_expression | or_expression | assign_expression | pre_unary_expression | post_unary_expression;
+
+        export interface variable_definition {
+            name: string;
+            value?: expression;
+            type?: type;
+            kind: 'variable_definition';
+        }
+
+        export interface function_definition {
+            name: string;
+            //compile_parameter_packs: compile_parameter[];
+            parameters: parameter[];
+            block: group_statement;
+            kind: 'function_definition';
+        }
+
+        export interface parameter {
+            name: string;
+            type: type;
+            kind: 'parameter';
+        }
+
+        export interface class_definition {
+            name: string;
+            variables: variable_definition[];
+            functions: function_definition[];
+            kind: 'class_definition';
+        }
+
+        export interface group_statement {
+            block: statement[];
+            kind: 'group_statement';
+        }
+
+        export interface if_statement {
+            cond: expression;
+            block: group_statement;
+            next?: else_if_statement | else_statement;
+            kind: 'if_statement';
+        }
+
+        export interface else_if_statement {
+            cond: expression;
+            block: group_statement;
+            next?: else_if_statement | else_statement;
+            kind: 'else_if_statement';
+        }
+
+        export interface else_statement {
+            block: group_statement;
+            kind: 'else_statement';
+        }
 
         export interface integer {
             value: number;
@@ -93,6 +150,52 @@ export namespace nitro {
             right: expression;
             op: '+' | '-';
             kind: 'add_expression';
+        }
+
+        export interface mul_expression {
+            left: expression;
+            right: expression;
+            op: '*' | '/' | '%';
+            kind: 'mul_expression';
+        }
+
+        export interface cmp_expression {
+            left: expression;
+            right: expression;
+            op: '==' | '!=' | '<=' | '>=' | '<' | '>';
+            kind: 'cmp_expression';
+        }
+
+        export interface and_expression {
+            left: expression;
+            right: expression;
+            op: 'and';
+            kind: 'and_expression';
+        }
+
+        export interface or_expression {
+            left: expression;
+            right: expression;
+            op: 'or';
+            kind: 'or_expression';
+        }
+
+        export interface assign_expression {
+            left: expression;
+            right: expression;
+            kind: 'assign_expression';
+        }
+
+        export interface pre_unary_expression {
+            value: expression;
+            op: '-' | '++' | '--' | '*' | '&' | 'not';
+            kind: 'pre_unary_expression';
+        }
+
+        export interface post_unary_expression {
+            value: expression;
+            op: '++' | '--' | '!' | '?';
+            kind: 'post_unary_expression';
         }
     }
 
@@ -128,6 +231,7 @@ export namespace nitro {
             name: string;
             variables: variable_definition[];
             functions: class_function_definition[];
+            type: types.classname;
             kind: 'class_definition';
         }
 

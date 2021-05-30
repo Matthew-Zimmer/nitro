@@ -1221,7 +1221,11 @@ describe('translate definitions', () => {
                         type: { kind: 'func', args: [{ kind: 'pointer', base: { kind: 'classname', name: 'a' }}, { kind: 'int' }, { kind: 'float' }], ret: { kind: 'void' } },
                         block: { kind: 'group_statement', block: [] }
                     },
-                ]
+                ],
+                type: {
+                    kind: 'classname',
+                    name: 'a'
+                }
             });
     
             expect(t.working_stack).toStrictEqual([{

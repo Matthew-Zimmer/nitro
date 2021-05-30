@@ -4,6 +4,7 @@ export * from './stack';
 export * from './translator';
 export * from './binder';
 export * from './type_util';
+export * from './error';
 
 // import * as fs from 'fs/promises';
 // import { nitro } from './formal';
