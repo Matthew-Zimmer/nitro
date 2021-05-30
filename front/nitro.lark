@@ -1,0 +1,65 @@
+nitro: definition*
+
+definition: variable_definition | function_definition | class_definition
+
+variable_definition: "let" NAME (":" type)? initial_value? ";"
+initial_value: "=" expression
+
+function_definition: "func" NAME parameters group_statement
+parameters: "(" (parameter ("," parameter)*)? ")"
+parameter: NAME ":" type
+
+class_definition: "class" NAME "{" properties "}"
+properties: (variable_definition | function_definition)*
+
+
+statement: group_statement | if_statement
+
+group_statement: "{" block "}"
+block: statement*
+
+if_statement: "if" expression ":" group_statement (else_if_statement | else_statement)?
+else_if_statement: "else" "if" expression ":" group_statement (else_if_statement | else_statement)?
+else_statement: "else"  group_statement
+
+expression: assign_expression
+
+!assign_expression: expression "=" or_expression | or_expression
+!or_expression: or_expression "or" and_expression |  and_expression
+!and_expression: and_expression "and" cmp_expression | cmp_expression
+!cmp_expression: cmp_expression ("==" | "!=" | "<=" | ">=" | "<" | ">") add_expression | add_expression
+!add_expression: add_expression ("+" | "-") mul_expression | mul_expression
+!mul_expression: mul_expression ("*" | "/" | "%") function_call | function_call
+!function_call: expression "(" (expression ("," expression)*)? ")" | pre_unary_expression
+!pre_unary_expression: ("++" | "--" | "-" | "*" | "&" | "not") pre_unary_expression | post_unary_expression
+!post_unary_expression: post_unary_expression ("++" | "--" | "?" | "!") | group_expression
+group_expression: "(" expression ")" | literal
+literal: integer | floating_point | boolean | identifier
+integer: INTEGER
+floating_point: FLOATING_POINT
+boolean: BOOLEAN
+identifier: IDENTIFIER ("." identifier)?
+
+type: func
+!func: "(" (type ("," type)*)? ")" "=>" func | pointer
+!pointer: pointer "*" | primitive
+primitive: int | bool | float | void | classname | literal_int | literal_float | literal_bool
+int: "int"
+bool: "bool"
+float: "float"
+void: "void"
+classname: IDENTIFIER
+literal_int: INTEGER
+literal_float: FLOATING_POINT
+literal_bool: BOOLEAN
+
+NAME: /[a-zA-Z][a-zA-Z0-9_]*/
+IDENTIFIER: /[a-zA-Z][a-zA-Z0-9_]*/
+INTEGER: /0|[1-9][0-9]*/
+FLOATING_POINT: /(0|[1-9][0-9]*)\.[0-9]+/
+BOOLEAN: "true" | "false"
+
+%ignore " "
+%ignore "\t"
+%ignore "\n"
+%ignore "\r"

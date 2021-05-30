@@ -1,0 +1,7 @@
+#!/bin/sh
+
+file="$1"
+
+python3.8 front/nitro.py "$file" &&
+node middle/build/nitro.js "$file.json" &&
+back/nitro.sh "$file.json.c"

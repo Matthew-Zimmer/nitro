@@ -387,4 +387,9 @@ export class binder extends stack<binder_map> {
     definition = (node: nitro.ast.definition) => {
         return this[node.kind](node as any);
     }
+
+    root = (node: nitro.ast.root): nitro.tast.root => {
+        node.forEach(this.definition);
+        return this.pop_all('definition');
+    }
 }

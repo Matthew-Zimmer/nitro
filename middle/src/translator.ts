@@ -241,8 +241,8 @@ export class translator extends stack<translator_map> {
         const name = node.name;
         this.push('definition', { kind: 'type_definition', name, type: { kind: 'classname', name: `struct _${name}` } });
         const properties = node.variables.map(x => this.variable_definition(x).pop());
-        node.functions.forEach(this.function_definition);
         this.push('definition', { kind: 'struct_definition', name: `_${name}`, properties });
+        node.functions.forEach(this.function_definition);
         return this.consumer<c.ast.struct_definition>()('definition');
     }
 

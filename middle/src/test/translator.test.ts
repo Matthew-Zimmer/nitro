@@ -1238,6 +1238,25 @@ describe('translate definitions', () => {
                 }, {
                     kind: 'definition',
                     value: {
+                        kind: 'struct_definition',
+                        name: '_a',
+                        properties: [
+                            {
+                                kind: 'variable_definition',
+                                name: 'x',
+                                type: { kind: 'int' },
+                                value: { kind: 'integer', value: 2 }
+                            }, {
+                                kind: 'variable_definition',
+                                name: 'y',
+                                type: { kind: 'int' },
+                                value: undefined
+                            }
+                        ]
+                    }
+                }, {
+                    kind: 'definition',
+                    value: {
                         kind: 'function_definition',
                         name: 'f',
                         parameters: [{ 
@@ -1280,25 +1299,6 @@ describe('translate definitions', () => {
                         }],
                         ret_type: { kind: 'void' },
                         block: { kind: 'group_statement', block: [] }
-                    }
-                }, {
-                    kind: 'definition',
-                    value: {
-                        kind: 'struct_definition',
-                        name: '_a',
-                        properties: [
-                            {
-                                kind: 'variable_definition',
-                                name: 'x',
-                                type: { kind: 'int' },
-                                value: { kind: 'integer', value: 2 }
-                            }, {
-                                kind: 'variable_definition',
-                                name: 'y',
-                                type: { kind: 'int' },
-                                value: undefined
-                            }
-                        ]
                     }
                 }
             ]);

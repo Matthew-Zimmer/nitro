@@ -65,6 +65,7 @@ export namespace nitro {
         export type definition = variable_definition | function_definition | class_definition;
         export type statement = group_statement | if_statement;
         export type expression = integer | floating_point | boolean_t | identifier | function_call | add_expression | mul_expression | cmp_expression | and_expression | or_expression | assign_expression | pre_unary_expression | post_unary_expression;
+        export type root = definition[];
 
         export interface variable_definition {
             name: string;
