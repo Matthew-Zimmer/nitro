@@ -1,0 +1,48 @@
+
+func page(title, children) {
+  <html>
+    <head>
+      <title>
+        ${title}
+      </title>
+    </head>
+    <body>
+      ${children}
+    </body>
+  </html>
+}
+
+get /items () {
+  let rows = select id, name from item
+  <page title=${"Items"}>
+    ${for row in rows {
+      <a href=${row.id}>${row.name}</a>
+    }}
+  </page>
+}
+
+page({
+  title,
+  children: for row in rows { 
+    __html_a({
+      href: row.id,
+      children: row.name
+    })
+  }
+})
+
+__html_html({
+  children: [_html_head({
+    children: _html_title({
+      children: $title
+    })
+  }), _html_body({
+    children: $children
+  })]
+})
+
+
+
+
+
+

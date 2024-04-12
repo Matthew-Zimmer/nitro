@@ -1,0 +1,106 @@
+
+func page(children: str): str {
+  <html>
+    <head>
+      <title>My Page</title>
+      <script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+    </head>
+    <body>
+      {children}
+    </body>
+  </html>
+}
+
+func component(children: str): str {
+  <div>
+    Hello, {children}
+  </div>
+}
+
+func headline(children: str): str {
+  <h1>
+    {children}
+  </h1>
+}
+
+get /click (): str {
+  <div>You Clicked Me you fool!</div>
+}
+
+get /nest (): str {
+  <page>
+    <h1>Nested</h1>
+    <button hx-get="/click">
+      This is a button maybe you should click it??
+    </button>    
+  </page>
+}
+
+get /nest/nest (): str {
+  <page>
+    <h1>Nested-Nested</h1>
+    <button hx-get="/click">
+      This is a button maybe you should click it??
+    </button>
+    <component>
+      Matthew
+    </component>    
+  </page>
+}
+
+get /nest/nest/nest (): str {
+  <page>
+    <h1>Nested-Nested-Nested</h1>
+    <button hx-get="/click">
+      This is a button maybe you should click it??
+    </button>
+    <component>
+      <headline>
+        Matthew
+      </headline>
+    </component>    
+  </page>
+}
+
+get /db (): str {
+  let rows = select id from my_table
+  
+  <page>
+    {for row in rows {
+      let id = row.id
+      
+      <button hx-get={"/row/" + id}>
+        Click to show value for {id}
+      </button>
+    }}
+  </page>
+}
+
+get /db (): str {
+  let rows = select id from my_table
+  
+  <page>
+    {for row in rows {      
+      <c0 id={row.id} />
+    }}
+  </page>
+}
+
+func c0(id: str): str {
+  let v0 = "/row/" + id
+  
+  <button hx-get={v0}>
+    Click to show value for {id}
+  </button>
+}
+
+get /row/{id} (): str {
+  let rows = select col2 from my_table where id = {id}
+  __go__ col2 := rows[0].col2
+  <div>
+    {col2}
+  </div>
+}
+
+
+

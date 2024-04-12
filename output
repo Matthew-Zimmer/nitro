@@ -1,0 +1,115 @@
+{
+  "start": {
+    "kind": "HTMLExpression",
+    "tag": "div",
+    "attributes": [
+      {
+        "name": "class",
+        "value": {
+          "kind": "HTMLTextExpression",
+          "value": "flex flex-col gap-2 bg-black",
+          "type": {
+            "kind": "HTMLType"
+          }
+        }
+      }
+    ],
+    "type": {
+      "kind": "HTMLType"
+    }
+  },
+  "end": {
+    "kind": "GoBlockExpression",
+    "expressions": [
+      {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoStringExpression",
+            "value": "<div"
+          }
+        ]
+      },
+      {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoStringExpression",
+            "value": "class=\""
+          }
+        ]
+      },
+      {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoStringExpression",
+            "value": "flex flex-col gap-2 bg-black"
+          }
+        ]
+      },
+      {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoStringExpression",
+            "value": "\""
+          }
+        ]
+      },
+      {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoStringExpression",
+            "value": " />"
+          }
+        ]
+      },
+      {
+        "kind": "GoIdentifierExpression",
+        "name": "nil"
+      }
+    ]
+  }
+}

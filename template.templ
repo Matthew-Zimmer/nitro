@@ -1,0 +1,17 @@
+{{ block component . }}
+  <div hx-get="/hello?name={{.Value}}" hx-swap="outerHTML" class="border p-4">
+    {{.Value}}
+  </div>
+{{ end }}
+
+{{block __get . }}
+  {{ template component . }}
+{{end}}
+
+{{block __get_hello . }}
+  Hello
+{{end}}
+
+{{block __get_entity__id__friends . }}
+  <div>You have no friends</div>
+{{end}}

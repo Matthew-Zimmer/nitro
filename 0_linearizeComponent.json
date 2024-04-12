@@ -1,0 +1,187 @@
+[
+  [
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_4",
+      "parameters": [
+        "x"
+      ],
+      "expression": {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteString"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "x"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_2",
+      "parameters": [
+        "x"
+      ],
+      "expression": {
+        "kind": "GoBlockExpression",
+        "expressions": [
+          {
+            "kind": "GoApplicationExpression",
+            "func": {
+              "kind": "GoIdentifierExpression",
+              "name": "_4"
+            },
+            "args": [
+              {
+                "kind": "GoIdentifierExpression",
+                "name": "x"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_1",
+      "expression": {
+        "kind": "GoForExpression",
+        "name": "x",
+        "iterable": {
+          "kind": "GoIdentifierExpression",
+          "name": "seq_10"
+        },
+        "expression": {
+          "kind": "GoBlockExpression",
+          "expressions": [
+            {
+              "kind": "GoApplicationExpression",
+              "func": {
+                "kind": "GoIdentifierExpression",
+                "name": "_2"
+              },
+              "args": [
+                {
+                  "kind": "GoIdentifierExpression",
+                  "name": "x"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "parameters": []
+    },
+    {
+      "kind": "GoVariableDefinition",
+      "name": "_7",
+      "expression": {
+        "kind": "GoCastExpression",
+        "expression": {
+          "kind": "GoStringExpression",
+          "value": "Add Stuff"
+        }
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_6",
+      "parameters": [],
+      "expression": {
+        "kind": "GoApplicationExpression",
+        "func": {
+          "kind": "GoIdentifierExpression",
+          "name": "WriteBytes"
+        },
+        "args": [
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "c"
+          },
+          {
+            "kind": "GoIdentifierExpression",
+            "name": "_7"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_5",
+      "parameters": [],
+      "expression": {
+        "kind": "GoBlockExpression",
+        "expressions": [
+          {
+            "kind": "GoApplicationExpression",
+            "func": {
+              "kind": "GoIdentifierExpression",
+              "name": "_6"
+            },
+            "args": []
+          }
+        ]
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "_0",
+      "parameters": [],
+      "expression": {
+        "kind": "GoBlockExpression",
+        "expressions": [
+          {
+            "kind": "GoApplicationExpression",
+            "func": {
+              "kind": "GoIdentifierExpression",
+              "name": "_1"
+            },
+            "args": []
+          },
+          {
+            "kind": "GoApplicationExpression",
+            "func": {
+              "kind": "GoIdentifierExpression",
+              "name": "_5"
+            },
+            "args": []
+          }
+        ]
+      }
+    },
+    {
+      "kind": "GoFunctionDefinition",
+      "name": "my_component",
+      "parameters": [],
+      "expression": {
+        "kind": "GoBlockExpression",
+        "expressions": [
+          {
+            "kind": "GoApplicationExpression",
+            "func": {
+              "kind": "GoIdentifierExpression",
+              "name": "_0"
+            },
+            "args": []
+          }
+        ]
+      }
+    }
+  ],
+  {
+    "kind": "GoApplicationExpression",
+    "func": {
+      "kind": "GoIdentifierExpression",
+      "name": "my_component"
+    },
+    "args": []
+  }
+]

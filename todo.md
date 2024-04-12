@@ -1,0 +1,33 @@
+# Todo List
+
+- [ ] Add more SQL Nodes
+  - [-] escape feature
+  - [x] where node
+  - [ ] order by node
+  - [ ] group by node
+  - [ ] join node
+  - [ ] sub queries node
+  - [ ] identifier node
+  - [ ] insert expression
+  - [ ] update expression
+  - [ ] delete expression
+- [ ] component fixes
+  - [+] component props
+  - [ ] allow code to be ran in components before rendering
+- [ ] html improvements
+  - [ ] loops!
+- [ ] general language grammar improvements
+  - [ ] comments
+  - [ ] if expression
+  - [ ] loop expressions
+    - [ ] for iterator
+  - [ ] struct grammar
+  - [ ] enum types
+  - [ ] match expression
+- [ ] compiler features
+  - [ ] typechecking & type inference
+- [ ] optimizations
+  - [*] combine snippets together
+  - [ ] think about it
+- [ ] std lib
+  - [ ] todo

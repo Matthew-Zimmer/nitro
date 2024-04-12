@@ -1,0 +1,23 @@
+{
+  "name": "static",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.11.4",
+    "express": "^4.19.1",
+    "on-headers": "^1.0.2",
+    "peggy": "^4.0.2",
+    "pg": "^8.11.3"
+  }
+}

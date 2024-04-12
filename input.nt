@@ -1,0 +1,43 @@
+
+declare func html(children: html): html intrinsic
+declare func head(children: html): html intrinsic
+declare func title(children: html): html intrinsic
+declare func body(children: html): html intrinsic
+declare func h1(children: html): html intrinsic
+
+
+
+
+func page(title: str, children: html): html
+  <html>
+    <head>
+      <title>
+        ${title}
+      </title>
+    </head>
+    <body>
+      ${children}
+    </body>
+  </html>
+
+get / ()
+  <page title="hello">
+    <h1>
+      Nitro Rules
+    </h1>
+  </page>
+
+get /${msg} ()
+  <page title=${msg}>
+    <h1>
+      Nitro Rules
+    </h1>
+  </page>
+
+get /items ()
+  <page title="items">  
+    ${for x in select 1 {
+      <h1>${x.column1}</h1>
+    }}
+  </page>
+  
