@@ -1,9 +1,0 @@
-post /api/item (payload: item[!id]) {
-  let name = "mz"
-  let id = ""
-
-  insert into item
-    (id, *)
-  values 
-    (${id}, *${payload})
-}

@@ -1,5 +1,0 @@
-
-
-func page(w echo) {
-
-}
