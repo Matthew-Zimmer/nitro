@@ -69,13 +69,16 @@ get /${msg} ()
 get /items ()
   <page title="items">  
     <a href="/item/new">Create New Item</a>
-    <div hx-confirm="Are you sure want to delete this?">
+    <div>
       ${for x in select id, name from item {
         <row>
           <h1>${x.name}</h1>
-          <button hx-delete="/item/${x.id}" hx-target="closest div" hx-swap="delete">
+          <button hx-delete="/item/${x.id}" hx-target="closest div" hx-swap="delete" hx-confirm="Are you sure want to delete this?">
             Delete
           </button>
+          <a href="/item/${x.id}/edit">
+            Edit
+          </a>
         </row>
       }}
     </div>
@@ -83,7 +86,7 @@ get /items ()
 
 get /item/new ()
   <page title="Create Item">
-    <form hx-post="/item" class="flex flex-col gap-2 border p-10 border-black">
+    <form hx-post="/item" class="flex flex-col gap-2 border p-10 border-black" hx-push-url="/items">
       <h1>Create new Item</h1>
       <fieldset class="flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500" err="Please enter a name">
         <label for="name">Name</label>
@@ -91,6 +94,24 @@ get /item/new ()
       </fieldset>
       <button>
         Create
+      </button>
+    </form>
+  </page>
+
+
+func textfield(label: str, name: str, error_message: str): html
+  <fieldset class="flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500" err=${error_message}>
+    <label for=${name}>${label}</label>
+    <input id=${name} class="border p-2 invalid:border-red-500" name=${name} required="true" />
+  </fieldset>
+
+get /item/${id}/edit ()
+  <page title="App">
+    <form hx-put="/item/${id}" class="flex flex-col gap-2 border p-10 border-black">
+      <h1>Edit Existing Item</h1>
+      <textfield label="Name" name="name" error_message="Please enter a name" />
+      <button>
+        Submit
       </button>
     </form>
   </page>

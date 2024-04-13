@@ -244,6 +244,56 @@ return func(f func(struct {
 }
 }
 
+func textfield (label string,name string,error_message string) Component {
+return func (c echo.Context) error {
+return (func () error {
+WriteString(c,"<fieldset")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500")
+})()
+WriteString(c,"\"")
+WriteString(c," err=\"")
+WriteString(c,error_message)
+WriteString(c,"\"")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<label")
+WriteString(c," for=\"")
+WriteString(c,name)
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,label)
+WriteString(c,"</label>")
+return nil
+})()
+(func () error {
+WriteString(c,"<input")
+WriteString(c," id=\"")
+WriteString(c,name)
+WriteString(c,"\"")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"border p-2 invalid:border-red-500")
+})()
+WriteString(c,"\"")
+WriteString(c," name=\"")
+WriteString(c,name)
+WriteString(c,"\"")
+WriteString(c," required=\"")
+(func () error {
+return WriteString(c,"true")
+})()
+WriteString(c,"\"")
+WriteString(c," />")
+return nil
+})()
+WriteString(c,"</fieldset>")
+return nil
+})()
+}
+}
+
 func _1 (n_0 string,n_1 string) error {
 _, err := db.Exec(`insert into item (id, name) values ($1, $2)`, n_0,n_1)
 if err != nil {
@@ -340,11 +390,6 @@ return nil
 })()
 return (func () error {
 WriteString(c,"<div")
-WriteString(c," hx-confirm=\"")
-(func () error {
-return WriteString(c,"Are you sure want to delete this?")
-})()
-WriteString(c,"\"")
 WriteString(c,">")
 exhaust(_0(), func (x struct {
 	Id string
@@ -360,7 +405,7 @@ WriteString(c,(x.Name))
 WriteString(c,"</h1>")
 return nil
 })()
-return (func () error {
+(func () error {
 WriteString(c,"<button")
 WriteString(c," hx-delete=\"")
 (func () error {
@@ -378,9 +423,28 @@ WriteString(c," hx-swap=\"")
 return WriteString(c,"delete")
 })()
 WriteString(c,"\"")
+WriteString(c," hx-confirm=\"")
+(func () error {
+return WriteString(c,"Are you sure want to delete this?")
+})()
+WriteString(c,"\"")
 WriteString(c,">")
 WriteString(c,"Delete")
 WriteString(c,"</button>")
+return nil
+})()
+return (func () error {
+WriteString(c,"<a")
+WriteString(c," href=\"")
+(func () error {
+WriteString(c,"/item/")
+WriteString(c,(x.Id))
+return WriteString(c,"/edit")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"Edit")
+WriteString(c,"</a>")
 return nil
 })()
 })()
@@ -408,6 +472,11 @@ WriteString(c,"\"")
 WriteString(c," class=\"")
 (func () error {
 return WriteString(c,"flex flex-col gap-2 border p-10 border-black")
+})()
+WriteString(c,"\"")
+WriteString(c," hx-push-url=\"")
+(func () error {
+return WriteString(c,"/items")
 })()
 WriteString(c,"\"")
 WriteString(c,">")
@@ -475,6 +544,50 @@ return nil
 WriteString(c,"<button")
 WriteString(c,">")
 WriteString(c,"Create")
+WriteString(c,"</button>")
+return nil
+})()
+WriteString(c,"</form>")
+return nil
+})()
+})()
+})(c) 
+})
+
+e.GET("/item/:id/edit/", func (c echo.Context) error {
+ id := ""
+if err := echo.PathParamsBinder(c).String("id", &id).BindError(); err != nil {
+  return c.String(http.StatusBadRequest, "bad request")
+}
+
+return page("App",func (c echo.Context) error {
+return (func () error {
+return (func () error {
+WriteString(c,"<form")
+WriteString(c," hx-put=\"")
+(func () error {
+WriteString(c,"/item/")
+return WriteString(c,id)
+})()
+WriteString(c,"\"")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"flex flex-col gap-2 border p-10 border-black")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<h1")
+WriteString(c,">")
+WriteString(c,"Edit Existing Item")
+WriteString(c,"</h1>")
+return nil
+})()
+textfield("Name","name","Please enter a name")(c)
+(func () error {
+WriteString(c,"<button")
+WriteString(c,">")
+WriteString(c,"Submit")
 WriteString(c,"</button>")
 return nil
 })()
