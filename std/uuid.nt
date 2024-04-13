@@ -1,0 +1,11 @@
+#go_import 
+import raw_uuid "github.com/google/uuid"
+#end
+
+#go
+func uuid() string {
+  return raw_uuid.New().String() 
+}
+#end
+
+export declare func uuid(): str intrinsic

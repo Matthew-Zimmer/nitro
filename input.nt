@@ -1,30 +1,4 @@
-
-#go_import 
-import raw_uuid "github.com/google/uuid"
-#end
-
-#go
-func uuid() string {
-  return raw_uuid.New().String() 
-}
-#end
-
-declare func uuid(): str intrinsic
-
-declare func html(children: html, _: str): html intrinsic
-declare func head(children: html, _: str): html intrinsic
-declare func title(children: html, _: str): html intrinsic
-declare func body(children: html, _: str): html intrinsic
-declare func h1(children: html, _: str): html intrinsic
-declare func div(children: html, _: str): html intrinsic
-declare func style(children: html, _: str): html intrinsic
-declare func script(children: html, _: str): html intrinsic
-declare func a(children: html, _: str): html intrinsic
-declare func input(children: html, _: str): html intrinsic
-declare func form(children: html, _: str): html intrinsic
-declare func fieldset(children: html, _: str): html intrinsic
-declare func button(children: html, _: str): html intrinsic
-declare func label(children: html, _: str): html intrinsic
+from std.uuid import uuid
 
 struct item {
   id: str,
@@ -133,8 +107,6 @@ post /item (payload: create_item_input) {
     (${uuid()}, ${payload.name})
 }
 
-
-declare func sql_op_eq(l: str, r: str): bool intrinsic
 
 delete /item/${id} () {
   delete from item where id = ${id}
