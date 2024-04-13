@@ -11,7 +11,19 @@ type UntypedDefinition =
   | UntypedHTTPDefinition
   | UntypedDeclareDefinition
   | UntypedTableDefinition
+  | UntypedRawGoSourceDefinition
+  | UntypedRawGoSourceImportDefinition
   | UntypedStructDefinition;
+
+type UntypedRawGoSourceDefinition = {
+  kind: "UntypedRawGoSourceDefinition";
+  source: string;
+};
+
+type UntypedRawGoSourceImportDefinition = {
+  kind: "UntypedRawGoSourceImportDefinition";
+  source: string;
+};
 
 type UntypedTableDefinition = {
   kind: "UntypedTableDefinition";
@@ -37,6 +49,7 @@ type UntypedHTTPDefinition = {
   kind: "UntypedHTTPDefinition";
   endpoint: HTTPPath[];
   verb: HTTPVerb;
+  parameters: { name: string; type: Type }[];
   expression: UntypedExpression;
 };
 
@@ -50,7 +63,7 @@ type UntypedSubHTMLExpression =
   | UntypedHTMLExpression
   | UntypedHTMLTextExpression
   | UntypedStringExpression
-  | UntypedHTMLCaptureExpression;
+  | UntypedCaptureExpression;
 
 type UntypedExpression =
   | UntypedHTMLBlockExpression
@@ -61,8 +74,11 @@ type UntypedExpression =
   | UntypedForExpression
   | UntypedLetExpression
   | UntypedSQLSelectExpression
+  | UntypedSQLInsertExpression
   | UntypedBlockExpression
-  | UntypedAddExpression;
+  | UntypedAddExpression
+  | UntypedDotExpression
+  | UntypedCallExpression;
 
 type UntypedSQLExpression =
   | UntypedSQLIdentifierExpression
@@ -72,7 +88,10 @@ type UntypedSQLExpression =
   | UntypedSQLColumnExpression
   | UntypedSQLBooleanExpression
   | UntypedSQLFromExpression
-  | UntypedSQLSelectExpression;
+  | UntypedSQLPackExpression
+  | UntypedSQLSelectExpression
+  | UntypedSQLInsertExpression
+  | UntypedCaptureExpression;
 
 type UntypedBlockExpression = {
   kind: "UntypedBlockExpression";
@@ -122,6 +141,18 @@ type UntypedSQLSelectExpression = {
   from?: UntypedSQLFromExpression;
 };
 
+type UntypedSQLPackExpression = {
+  kind: "UntypedSQLPackExpression";
+  values: UntypedSQLExpression[];
+};
+
+type UntypedSQLInsertExpression = {
+  kind: "UntypedSQLInsertExpression";
+  table: UntypedSQLFromExpression;
+  columns: UntypedSQLPackExpression;
+  values: UntypedSQLPackExpression[];
+};
+
 type UntypedHTMLBlockExpression = {
   kind: "UntypedHTMLBlockExpression";
   attributes: { name: string; value: UntypedSubHTMLExpression }[];
@@ -141,8 +172,8 @@ type UntypedHTMLTextExpression = {
   value: string;
 };
 
-type UntypedHTMLCaptureExpression = {
-  kind: "UntypedHTMLCaptureExpression";
+type UntypedCaptureExpression = {
+  kind: "UntypedCaptureExpression";
   expression: UntypedExpression;
 };
 
@@ -179,6 +210,18 @@ type UntypedAddExpression = {
   kind: "UntypedAddExpression";
   left: UntypedExpression;
   right: UntypedExpression;
+};
+
+type UntypedCallExpression = {
+  kind: "UntypedCallExpression";
+  left: UntypedExpression;
+  args: UntypedExpression[];
+};
+
+type UntypedDotExpression = {
+  kind: "UntypedDotExpression";
+  left: UntypedExpression;
+  name: string;
 };
 
 type Type =
@@ -243,7 +286,19 @@ type Definition =
   | HTTPDefinition
   | DeclareDefinition
   | StructDefinition
+  | RawGoSourceDefinition
+  | RawGoSourceImportDefinition
   | TableDefinition;
+
+type RawGoSourceDefinition = {
+  kind: "RawGoSourceDefinition";
+  source: string;
+};
+
+type RawGoSourceImportDefinition = {
+  kind: "RawGoSourceImportDefinition";
+  source: string;
+};
 
 type StructDefinition = {
   kind: "StructDefinition";
@@ -267,8 +322,9 @@ type FunctionDefinition = {
 
 type HTTPDefinition = {
   kind: "HTTPDefinition";
-  endpoint: HTTPPath[];
   verb: HTTPVerb;
+  endpoint: HTTPPath[];
+  parameters: { name: string; type: Type }[];
   expression: Expression;
 };
 
@@ -282,7 +338,7 @@ type SubHTMLExpression =
   | HTMLExpression
   | HTMLTextExpression
   | StringExpression
-  | HTMLCaptureExpression;
+  | CaptureExpression;
 
 type Expression =
   | HTMLBlockExpression
@@ -294,7 +350,10 @@ type Expression =
   | BlockExpression
   | LetExpression
   | SQLSelectExpression
-  | AddExpression;
+  | SQLInsertExpression
+  | AddExpression
+  | DotExpression
+  | CallExpression;
 
 type SQLExpression =
   | SQLIdentifierExpression
@@ -304,7 +363,10 @@ type SQLExpression =
   | SQLBooleanExpression
   | SQLColumnExpression
   | SQLFromExpression
-  | SQLSelectExpression;
+  | SQLSelectExpression
+  | SQLInsertExpression
+  | SQLPackExpression
+  | CaptureExpression;
 
 type BlockExpression = {
   kind: "BlockExpression";
@@ -363,6 +425,20 @@ type SQLSelectExpression = {
   type: Type;
 };
 
+type SQLPackExpression = {
+  kind: "SQLPackExpression";
+  values: SQLExpression[];
+  type: Type;
+};
+
+type SQLInsertExpression = {
+  kind: "SQLInsertExpression";
+  table: SQLFromExpression;
+  columns: SQLPackExpression;
+  values: SQLPackExpression[];
+  type: Type;
+};
+
 type HTMLBlockExpression = {
   kind: "HTMLBlockExpression";
   attributes: { name: string; value: SubHTMLExpression }[];
@@ -384,8 +460,8 @@ type HTMLTextExpression = {
   type: Type;
 };
 
-type HTMLCaptureExpression = {
-  kind: "HTMLCaptureExpression";
+type CaptureExpression = {
+  kind: "CaptureExpression";
   expression: Expression;
   type: Type;
 };
@@ -430,6 +506,20 @@ type AddExpression = {
   type: Type;
 };
 
+type DotExpression = {
+  kind: "DotExpression";
+  left: Expression;
+  name: string;
+  type: Type;
+};
+
+type CallExpression = {
+  kind: "CallExpression";
+  left: Expression;
+  args: Expression[];
+  type: Type;
+};
+
 type GoModule = {
   kind: "GoModule";
   definitions: GoDefinition[];
@@ -438,7 +528,19 @@ type GoModule = {
 type GoDefinition =
   | GoFunctionDefinition
   | GoHTTPDefinition
+  | GoRawSourceDefinition
+  | GoRawSourceImportDefinition
   | GoStructDefinition;
+
+type GoRawSourceDefinition = {
+  kind: "GoRawSourceDefinition";
+  source: string;
+};
+
+type GoRawSourceImportDefinition = {
+  kind: "GoRawSourceImportDefinition";
+  source: string;
+};
 
 type GoStructDefinition = {
   kind: "GoStructDefinition";
@@ -470,8 +572,9 @@ type HTTPVariablePath = {
 
 type GoHTTPDefinition = {
   kind: "GoHTTPDefinition";
-  endpoint: HTTPPath[];
   verb: HTTPVerb;
+  endpoint: HTTPPath[];
+  parameters: { name: string; type: GoType }[];
   expression: GoExpression;
 };
 
@@ -485,7 +588,7 @@ type GoExpression =
   | GoForExpression
   | GoSourceExpression
   | GoBlockExpression
-  | GoAddExpression;
+  | GoInfixExpression;
 
 type GoType =
   | GoStringType
@@ -586,9 +689,10 @@ type GoBlockExpression = {
   type: GoType;
 };
 
-type GoAddExpression = {
-  kind: "GoAddExpression";
+type GoInfixExpression = {
+  kind: "GoInfixExpression";
   left: GoExpression;
+  op: string;
   right: GoExpression;
 };
 
@@ -600,7 +704,9 @@ function writeStringExpr(value: string | GoExpression): GoExpression {
     func: { kind: "GoIdentifierExpression", name: "WriteString" },
     args: [
       { kind: "GoIdentifierExpression", name: "c" },
-      typeof value === "string" ? { kind: "GoStringExpression", value } : value,
+      typeof value === "string"
+        ? { kind: "GoStringExpression", value: value.replace(/\n/g, "\\n") }
+        : value,
     ],
   };
 }
@@ -620,31 +726,47 @@ function writeIntegerExpr(value: number | GoExpression): GoExpression {
   };
 }
 
-function sqlQuery(e: SQLExpression): string {
-  switch (e.kind) {
-    case "SQLIdentifierExpression":
-      return e.name;
-    case "SQLColumnIdentifierExpression":
-      return `"${e.name}"`;
-    case "SQLIntegerExpression":
-      return `${e.value}`;
-    case "SQLStringExpression":
-      return e.value;
-    case "SQLBooleanExpression":
-      return `${e.value}`;
-    case "SQLColumnExpression":
-      return e.alias === undefined
-        ? sqlQuery(e.expression)
-        : `${sqlQuery(e.expression)} as "${e.alias}"`;
-    case "SQLFromExpression":
-      return e.alias === undefined
-        ? sqlQuery(e.table)
-        : `${sqlQuery(e.table)} as "${e.alias}"`;
-    case "SQLSelectExpression":
-      return `select ${e.columns.map(sqlQuery).join(", ")}${
-        e.from === undefined ? "" : ` from ${sqlQuery(e.from)}`
-      }`;
+function sqlQuery(e: SQLExpression): [string, Expression[]] {
+  let parameterCount = 0;
+  const captures: Expression[] = [];
+  function imp(e: SQLExpression): string {
+    switch (e.kind) {
+      case "CaptureExpression": {
+        captures.push(e.expression);
+        return `$${++parameterCount}`;
+      }
+      case "SQLIdentifierExpression":
+        return e.name;
+      case "SQLColumnIdentifierExpression":
+        return `"${e.name}"`;
+      case "SQLIntegerExpression":
+        return `${e.value}`;
+      case "SQLStringExpression":
+        return `'${e.value}'`;
+      case "SQLBooleanExpression":
+        return `${e.value}`;
+      case "SQLColumnExpression":
+        return e.alias === undefined
+          ? imp(e.expression)
+          : `${imp(e.expression)} as "${e.alias}"`;
+      case "SQLFromExpression":
+        return e.alias === undefined
+          ? imp(e.table)
+          : `${imp(e.table)} as "${e.alias}"`;
+      case "SQLSelectExpression":
+        return `select ${e.columns.map(imp).join(", ")}${
+          e.from === undefined ? "" : ` from ${imp(e.from)}`
+        }`;
+      case "SQLInsertExpression":
+        return `insert into ${imp(e.table)} ${imp(e.columns)} values ${e.values
+          .map(imp)
+          .join(", ")}`;
+      case "SQLPackExpression":
+        return `(${e.values.map(imp).join(", ")})`;
+    }
   }
+  const query = imp(e);
+  return [query, captures];
 }
 
 let nextGeneratedNameCount = 0;
@@ -762,7 +884,7 @@ function toGo(
           }
         case "HTMLTextExpression":
           return writeStringExpr(e.value);
-        case "HTMLCaptureExpression":
+        case "CaptureExpression":
           if (promote === false) {
             return expr(e.expression);
           }
@@ -802,12 +924,12 @@ function toGo(
     return imp(e);
   }
 
-  function sql(e: SQLSelectExpression): GoExpression {
+  function sql(e: SQLSelectExpression | SQLInsertExpression): GoExpression {
     switch (e.kind) {
       case "SQLSelectExpression": {
         const name = nextGeneratedName();
         const ty = type(e.type);
-        const query = sqlQuery(e);
+        const [query, captures] = sqlQuery(e);
 
         if (e.type.kind !== "IteratorType") {
           throw new Error();
@@ -822,22 +944,28 @@ function toGo(
         defs.push({
           kind: "GoFunctionDefinition",
           name,
-          parameters: [], // should match the capture args,
+          parameters: captures.map((x, i) => ({
+            name: `n_${i}`,
+            type: type(x.type),
+          })),
           ret: ty,
           expression: {
             kind: "GoSourceExpression",
             source: `\
 var obj ${innerType}
-rows, err = db.Query(${query}, )
+rows, err := db.Query(\`${query}\`, ${captures
+              .map((_, i) => `n_${i}`)
+              .join(",")})
 if err != nil {
   panic("bad query: " + err.Error())
 }
 return func(f func(${innerType}) error) (bool, error) {
   if rows.Next() {
-    rows.scan(${e.type.type.properties.map((x) => `&obj.${x.name}`).join(", ")})
+    rows.Scan(${e.type.type.properties
+      .map((x) => `&obj.${capitalize(x.name)}`)
+      .join(", ")})
     return false, f(obj)
-  }
-  else {
+  } else {
     rows.Close()
     return true, nil
   }
@@ -852,7 +980,41 @@ return func(f func(${innerType}) error) (bool, error) {
             kind: "GoIdentifierExpression",
             name,
           },
-          args: [], // todo these should be the capture args
+          args: captures.map(expr),
+        };
+      }
+      case "SQLInsertExpression": {
+        const name = nextGeneratedName();
+        const [query, captures] = sqlQuery(e);
+
+        defs.push({
+          kind: "GoFunctionDefinition",
+          name,
+          parameters: captures.map((x, i) => ({
+            name: `n_${i}`,
+            type: type(x.type),
+          })),
+          ret: { kind: "GoErrorType" },
+          expression: {
+            kind: "GoSourceExpression",
+            source: `\
+_, err := db.Exec(\`${query}\`, ${captures.map((_, i) => `n_${i}`).join(",")})
+if err != nil {
+  panic("bad query: " + err.Error())
+}
+return nil
+\
+`,
+          },
+        });
+
+        return {
+          kind: "GoApplicationExpression",
+          func: {
+            kind: "GoIdentifierExpression",
+            name,
+          },
+          args: captures.map(expr),
         };
       }
     }
@@ -863,6 +1025,9 @@ return func(f func(${innerType}) error) (bool, error) {
       case "HTMLBlockExpression":
       case "HTMLExpression":
         return html(e);
+      case "SQLSelectExpression":
+      case "SQLInsertExpression":
+        return sql(e);
       case "IntegerExpression":
         return {
           kind: "GoIntegerExpression",
@@ -895,11 +1060,19 @@ return func(f func(${innerType}) error) (bool, error) {
         let ty = type(e.type.type);
         ty = ty.kind !== "GoComponentType" ? ty : { kind: "GoErrorType" };
 
+        let inner = expr(e.expression);
+
+        if (inner.kind === "GoBlockExpression") {
+          if (inner.type.kind === "GoComponentType") {
+            inner.type = { kind: "GoErrorType" };
+          }
+        }
+
         return {
           kind: "GoForExpression",
           name: e.name,
           iterable: expr(e.iterable),
-          expression: expr(e.expression),
+          expression: inner,
           elementType: type(e.iterable.type.type),
           iterationType: ty,
         };
@@ -911,20 +1084,33 @@ return func(f func(${innerType}) error) (bool, error) {
         };
       case "AddExpression":
         return {
-          kind: "GoAddExpression",
+          kind: "GoInfixExpression",
           left: expr(e.left),
+          op: "+",
           right: expr(e.right),
         };
-      case "SQLSelectExpression":
-        return sql(e);
+
+      case "CallExpression":
+        return {
+          kind: "GoApplicationExpression",
+          func: expr(e.left),
+          args: e.args.map(expr),
+        };
+      case "DotExpression":
+        return {
+          kind: "GoInfixExpression",
+          op: ".",
+          left: expr(e.left),
+          right: { kind: "GoIdentifierExpression", name: capitalize(e.name) },
+        };
     }
   }
 
   return [expr(e), defs];
 }
 
-function expandPathParameters(paths: HTTPPath[]): string {
-  const parameters = paths.flatMap((x): string[] => {
+function expandParameters(d: GoHTTPDefinition): string {
+  const parameters = d.endpoint.flatMap((x): string[] => {
     switch (x.kind) {
       case "HTTPConstantPath":
         return [];
@@ -935,14 +1121,35 @@ function expandPathParameters(paths: HTTPPath[]): string {
 
   return (
     parameters.map((x) => `${x} := ""`).join("\n") +
-    `
+    (parameters.length === 0
+      ? ""
+      : `
 if err := echo.PathParamsBinder(c)${parameters
-      .map((x) => `.String("${x}", &${x})`)
-      .join("")}.BindError(); err != nil {
+          .map((x) => `.String("${x}", &${x})`)
+          .join("")}.BindError(); err != nil {
   return c.String(http.StatusBadRequest, "bad request")
 }
+`) +
+    d.parameters
+      .map(
+        (p) => `
+var ${p.name} ${toGoSource(p.type)}
+if err := c.Bind(&${p.name}); err != nil {
+  return c.String(http.StatusBadRequest, "bad request")
+}
+if err = c.Validate(${p.name}); err != nil {
+  return err
+}
 `
+      )
+      .join("\n\n")
   );
+}
+
+function capitalize<S extends string>(x: S): Capitalize<S> {
+  return (
+    x.length === 0 ? "" : x[0].toUpperCase() + x.slice(1)
+  ) as Capitalize<S>;
 }
 
 function toGoSource(e: GoExpression | GoType | GoDefinition): string {
@@ -963,7 +1170,7 @@ function toGoSource(e: GoExpression | GoType | GoDefinition): string {
       return `${e.name}`;
     case "GoStructType":
       return `struct {\n${e.properties
-        .map((x) => `\t${x.name} ${toGoSource(x.type)}`)
+        .map((x) => `\t${capitalize(x.name)} ${toGoSource(x.type)}`)
         .join("\n")}\n}`;
 
     case "GoFunctionDefinition":
@@ -987,14 +1194,18 @@ function toGoSource(e: GoExpression | GoType | GoDefinition): string {
               }
             })()}/`
         )
-        .join("")}", func (c echo.Context) error {\n ${expandPathParameters(
-        e.endpoint
+        .join("")}", func (c echo.Context) error {\n ${expandParameters(
+        e
       )}\nreturn ${toGoSource(e.expression)} \n})`;
     case "GoStructDefinition":
       return `type ${e.name} ${toGoSource({
         kind: "GoStructType",
         properties: e.properties,
       })}`;
+    case "GoRawSourceDefinition":
+      return e.source;
+    case "GoRawSourceImportDefinition":
+      return e.source;
 
     case "GoSourceExpression":
       return e.source;
@@ -1025,17 +1236,21 @@ function toGoSource(e: GoExpression | GoType | GoDefinition): string {
           i + 1 !== a.length ? toGoSource(x) : `return ${toGoSource(x)}`
         )
         .join("\n")}\n})()`;
-    case "GoAddExpression":
-      return `(${toGoSource(e.left)}+${toGoSource(e.right)})`;
+    case "GoInfixExpression":
+      return `(${toGoSource(e.left)}${e.op}${toGoSource(e.right)})`;
   }
 }
 
 function splitGoDefinitions(defs: GoDefinition[]): {
   http: GoDefinition[];
   nonHttp: GoDefinition[];
+  rawImports: GoDefinition[];
+  rawSources: GoDefinition[];
 } {
   const nonHttp: GoDefinition[] = [];
   const http: GoDefinition[] = [];
+  const rawImports: GoDefinition[] = [];
+  const rawSources: GoDefinition[] = [];
 
   for (const def of defs) {
     ((): true => {
@@ -1047,6 +1262,12 @@ function splitGoDefinitions(defs: GoDefinition[]): {
         case "GoHTTPDefinition":
           http.push(def);
           return true;
+        case "GoRawSourceDefinition":
+          rawSources.push(def);
+          return true;
+        case "GoRawSourceImportDefinition":
+          rawImports.push(def);
+          return true;
       }
     })();
   }
@@ -1054,11 +1275,15 @@ function splitGoDefinitions(defs: GoDefinition[]): {
   return {
     nonHttp,
     http,
+    rawImports,
+    rawSources,
   };
 }
 
 function toGoMainModule(mod: GoModule): string {
-  const { http, nonHttp } = splitGoDefinitions(mod.definitions);
+  const { http, nonHttp, rawImports, rawSources } = splitGoDefinitions(
+    mod.definitions
+  );
 
   return `\
 package main
@@ -1067,13 +1292,32 @@ import (
   "strconv"
   "net/http"
   "database/sql"
+  "github.com/go-playground/validator"
 
 	"github.com/labstack/echo/v4"
   _ "github.com/lib/pq"
 )
 
+// raw imports
+
+${rawImports.map(toGoSource).join("\n")}
+
+// raw sources
+
+${rawSources.map(toGoSource).join("\n")}
 
 // start standard prelude
+
+type Validator struct {
+	validator *validator.Validate
+}
+
+func (cv *Validator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
 
 var (
   db *sql.DB = nil
@@ -1188,6 +1432,7 @@ func main() {
 	defer db.Close()
 
 	e := echo.New()
+  e.Validator = &Validator{validator: validator.New()}
 
   e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -1215,10 +1460,20 @@ ${http.map(toGoSource).join("\n\n")}
 
 function toGoSum() {
   return `\
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=
+github.com/go-playground/locales v0.14.1/go.mod h1:hxrqLVvrK65+Rwrd5Fc6F2O76J/NuW9t0sjnWqG1slY=
+github.com/go-playground/universal-translator v0.18.1 h1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=
+github.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91TpwSH2VMlDf28Uj24BCp08ZFTUY=
+github.com/go-playground/validator v9.31.0+incompatible h1:UA72EPEogEnq76ehGdEDp4Mit+3FDh548oRqwVgNsHA=
+github.com/go-playground/validator v9.31.0+incompatible/go.mod h1:yrEkQXlcI+PugkyDjY2bRrL/UBU4f3rvrgkN3V8JEig=
 github.com/labstack/echo/v4 v4.11.4 h1:vDZmA+qNeh1pd/cCkEicDMrjtrnMGQ1QFI9gWN1zGq8=
 github.com/labstack/echo/v4 v4.11.4/go.mod h1:noh7EvLwqDsmh/X/HWKPUl1AjzJrhyptRyEbQJfxen8=
 github.com/labstack/gommon v0.4.2 h1:F8qTUNXgG1+6WQmqoUWnz8WiEU60mXVVw0P4ht1WRA0=
 github.com/labstack/gommon v0.4.2/go.mod h1:QlUFxVM+SNXhDL/Z7YhocGIBYOiwB0mXm1+1bAPHPyU=
+github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=
+github.com/leodido/go-urn v1.4.0/go.mod h1:bvxc+MVxLKB4z00jd1z+Dvzr47oO32F/QSNjSBOlFxI=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
@@ -1226,6 +1481,10 @@ github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovk
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
+github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.2.2 h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQD0Loo=
@@ -1239,7 +1498,11 @@ golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.15.0 h1:h48lPFYpsTvQJZF4EKyI4aLHaev3CxivZmv7yZig9pc=
 golang.org/x/sys v0.15.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
-golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=   
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
+gopkg.in/go-playground/assert.v1 v1.2.1 h1:xoYuJVE7KT85PYWrN730RguIQO0ePzVRfFMXadIrXTM=
+gopkg.in/go-playground/assert.v1 v1.2.1/go.mod h1:9RXL0bg/zibRAgZUYszZSwO/z8Y/a8bDuhia5mkpMnE=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=  
 `;
 }
 
@@ -1250,9 +1513,16 @@ module main
 go 1.22.1
 
 require (
-  github.com/labstack/echo/v4 v4.11.4 // indirect
+  github.com/go-playground/validator v9.31.0+incompatible
+  github.com/labstack/echo/v4 v4.11.4
+  github.com/lib/pq v1.10.9
+)
+
+require (
+  github.com/go-playground/locales v0.14.1 // indirect
+  github.com/go-playground/universal-translator v0.18.1 // indirect
   github.com/labstack/gommon v0.4.2 // indirect
-  github.com/lib/pq v1.10.9 // indirect
+  github.com/leodido/go-urn v1.4.0 // indirect
   github.com/mattn/go-colorable v0.1.13 // indirect
   github.com/mattn/go-isatty v0.0.20 // indirect
   github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -1261,7 +1531,8 @@ require (
   golang.org/x/net v0.19.0 // indirect
   golang.org/x/sys v0.15.0 // indirect
   golang.org/x/text v0.14.0 // indirect
-)    
+  gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+)   
 `;
 }
 
@@ -1343,8 +1614,12 @@ function def(d: Definition, components: Set<string>): GoDefinition[] {
         ...defs,
         {
           kind: "GoHTTPDefinition",
-          endpoint: d.endpoint,
           verb: d.verb,
+          endpoint: d.endpoint,
+          parameters: d.parameters.map((x) => ({
+            name: x.name,
+            type: type(x.type),
+          })),
           expression: e,
         },
       ];
@@ -1352,6 +1627,10 @@ function def(d: Definition, components: Set<string>): GoDefinition[] {
     case "DeclareDefinition":
     case "TableDefinition":
       return [];
+    case "RawGoSourceDefinition":
+      return [{ kind: "GoRawSourceDefinition", source: d.source }];
+    case "RawGoSourceImportDefinition":
+      return [{ kind: "GoRawSourceImportDefinition", source: d.source }];
     case "StructDefinition":
       return [
         {
@@ -1460,16 +1739,59 @@ function bidiffByName<T extends { name: string }, V extends { name: string }>(
 function sqlExprName(e: SQLExpression, i: number): string {
   switch (e.kind) {
     case "SQLColumnIdentifierExpression":
-      return e.name;
     case "SQLIdentifierExpression":
+      return e.name;
     case "SQLIntegerExpression":
     case "SQLStringExpression":
     case "SQLSelectExpression":
     case "SQLBooleanExpression":
-      return `column_${i + 1}`;
+    case "CaptureExpression":
+      return `column${i + 1}`;
     case "SQLColumnExpression":
     case "SQLFromExpression":
+    case "SQLInsertExpression":
+    case "SQLPackExpression":
       throw new Error(`wtf`);
+  }
+}
+
+function typeEquals(l: Type, r: Type): boolean {
+  switch (l.kind) {
+    case "StringType":
+      return r.kind === "StringType";
+    case "IntegerType":
+      return r.kind === "IntegerType";
+    case "HTMLType":
+      return r.kind === "HTMLType";
+    case "FunctionType":
+      return (
+        r.kind === "FunctionType" &&
+        typeEquals(
+          { kind: "StructType", properties: l.from },
+          { kind: "StructType", properties: r.from }
+        ) &&
+        typeEquals(l.to, r.to)
+      );
+    case "IteratorType":
+      return r.kind === "IteratorType" && typeEquals(l.type, r.type);
+    case "IntrinsicType":
+      return r.kind === "IntrinsicType";
+    case "IdentifierType":
+      return r.kind === "IdentifierType" && l.name === r.name;
+    case "StructType": {
+      if (
+        !(
+          r.kind === "StructType" && l.properties.length === r.properties.length
+        )
+      )
+        return false;
+      return l.properties.every((p) => {
+        const rp = r.properties.find((x) => x.name === p.name)?.type;
+        return rp === undefined ? false : typeEquals(p.type, rp);
+      });
+    }
+    case "UnknownType":
+      return false;
   }
 }
 
@@ -1478,13 +1800,16 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
 
   function extractNamedTypes(d: UntypedDefinition): [string, Type][] {
     switch (d.kind) {
-      case "UntypedFunctionDefinition":
-      case "UntypedHTTPDefinition":
       case "UntypedDeclareDefinition":
-      case "UntypedTableDefinition":
-        return [];
+        return extractNamedTypes(d.definition);
       case "UntypedStructDefinition":
         return [[d.name, { kind: "StructType", properties: d.properties }]];
+      case "UntypedFunctionDefinition":
+      case "UntypedHTTPDefinition":
+      case "UntypedTableDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
+        return [];
     }
   }
 
@@ -1537,6 +1862,8 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
       case "UntypedHTTPDefinition":
       case "UntypedDeclareDefinition":
       case "UntypedStructDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
         return [];
       case "UntypedTableDefinition":
         return [[d.name, d.type]];
@@ -1558,33 +1885,33 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
     tables.set(name, resolvedType as StructType);
   }
 
-  function extractComponentInfo(d: UntypedDefinition): [string, Type][] {
+  function extractFunctionInfo(d: UntypedDefinition): [string, Type][] {
     switch (d.kind) {
       case "UntypedFunctionDefinition":
-        if (d.returnType.kind === "HTMLType") {
-          return [
-            [
-              d.name,
-              {
-                kind: "FunctionType",
-                from: d.parameters,
-                to: d.returnType,
-              },
-            ],
-          ];
-        } else return [];
+        return [
+          [
+            d.name,
+            {
+              kind: "FunctionType",
+              from: d.parameters,
+              to: d.returnType,
+            },
+          ],
+        ];
       case "UntypedDeclareDefinition":
-        return extractComponentInfo(d.definition);
+        return extractFunctionInfo(d.definition);
       case "UntypedHTTPDefinition":
       case "UntypedStructDefinition":
       case "UntypedTableDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
         return [];
     }
   }
 
-  const components = new Map(mod.definitions.flatMap(extractComponentInfo));
+  const functions = new Map(mod.definitions.flatMap(extractFunctionInfo));
 
-  const ctx = new Context(components);
+  const ctx = new Context(functions);
 
   let inDeclare = false;
 
@@ -1592,7 +1919,7 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
     tag: string,
     a: { name: string; value: UntypedSubHTMLExpression }[]
   ): { name: string; value: SubHTMLExpression }[] {
-    const componentType = components.get(tag);
+    const componentType = functions.get(tag);
 
     const attributes = a.map((x) => ({
       name: x.name,
@@ -1604,19 +1931,40 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
         `unknown html element ${tag}, are you missing a component or do you need to declare a web component?`
       );
     } else {
+      if (componentType.to.kind !== "HTMLType") {
+        errors.push(
+          `Cannot use a non component function as an html element, there is a function with the name of ${tag} but it is not an component since it returns ${componentType.to.kind} instead of HTML`
+        );
+      }
+
       const parameters = componentType.from.filter(
         (x) => x.name !== "children"
       );
 
+      const params: { name: string; type: Type }[] = [];
+
       const { extra, missing, same } = bidiffByName(parameters, attributes);
+      const wildcardParameter = parameters.find((x) => x.name === "_");
       if (extra.length !== 0) {
         for (const x of extra) {
-          errors.push(`unknown attribute ${x.name} for html element ${tag}`);
+          if (wildcardParameter !== undefined) {
+            if (x.value.type.kind !== wildcardParameter.type.kind) {
+              errors.push(
+                `in html element ${tag}, attribute ${x.name} expected ${x.value.type.kind} but got ${x.value.type.kind}`
+              );
+            } else {
+              params.push({ name: x.name, type: wildcardParameter.type });
+            }
+          } else {
+            errors.push(`unknown attribute ${x.name} for html element ${tag}`);
+          }
         }
       }
       if (missing.length !== 0) {
         for (const x of missing) {
-          errors.push(`missing attribute ${x.name} for html element ${tag}`);
+          if (x.name !== "_" || wildcardParameter === undefined) {
+            errors.push(`missing attribute ${x.name} for html element ${tag}`);
+          }
         }
       }
       for (const x of same) {
@@ -1624,19 +1972,17 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           errors.push(
             `in html element ${tag}, attribute ${x.name} expected ${x.type.kind} but got ${x.value.type.kind}`
           );
+        } else {
+          params.push(x);
         }
       }
 
       // sort the attributes
-      if (extra.length === 0 && missing.length === 0) {
-        const next = [];
-        for (const x of parameters) {
-          next.push(
-            attributes[attributes.findIndex((y) => y.name === x.name)!]
-          );
-        }
-        return next;
+      const next = [];
+      for (const x of params) {
+        next.push(attributes[attributes.findIndex((y) => y.name === x.name)!]);
       }
+      return next;
     }
 
     return [];
@@ -1678,10 +2024,10 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
         }; // lets try this as html type aka static string
       case "UntypedStringExpression":
         return expr(e) as StringExpression;
-      case "UntypedHTMLCaptureExpression": {
+      case "UntypedCaptureExpression": {
         const expression = expr(e.expression);
         return {
-          kind: "HTMLCaptureExpression",
+          kind: "CaptureExpression",
           expression,
           type: expression.type,
         };
@@ -1691,34 +2037,14 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
 
   function sqlExpr(e: UntypedSQLExpression): SQLExpression {
     switch (e.kind) {
-      case "UntypedSQLIdentifierExpression":
-        throw new Error(`TODO typecheck UntypedSQLIdentifierExpression`);
-      // return { kind: "SQLIdentifierExpression", name: e.name, type: {} };
-      case "UntypedSQLColumnIdentifierExpression": {
-        let type = ctx.get(e.name);
-        if (type === null) {
-          errors.push(`Unknown sql column ${e.name}`);
-          type = { kind: "UnknownType" };
-        }
-
+      case "UntypedCaptureExpression": {
+        const expression = expr(e.expression);
         return {
-          kind: "SQLColumnIdentifierExpression",
-          name: e.name,
-          type,
+          kind: "CaptureExpression",
+          expression,
+          type: expression.type,
         };
       }
-      case "UntypedSQLIntegerExpression":
-        return {
-          kind: "SQLIntegerExpression",
-          value: e.value,
-          type: { kind: "IntegerType" },
-        };
-      case "UntypedSQLStringExpression":
-        return {
-          kind: "SQLStringExpression",
-          value: e.value,
-          type: { kind: "StringType" },
-        };
       case "UntypedSQLSelectExpression": {
         const restore = ctx.load();
 
@@ -1755,6 +2081,99 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           type,
         };
       }
+      case "UntypedSQLInsertExpression": {
+        const restore = ctx.load();
+
+        let table = sqlExpr(e.table) as SQLFromExpression;
+        const rt = resolveType(table.type);
+        if (rt.kind === "StructType") {
+          ctx.push(new Map(rt.properties.map((x) => [x.name, x.type])));
+        } else {
+          errors.push(`SQL from needs to be a struct type`);
+        }
+
+        const columns = e.columns.values.map((x) => {
+          const val = sqlExpr(x);
+          switch (x.kind) {
+            case "UntypedSQLIdentifierExpression":
+            case "UntypedSQLColumnIdentifierExpression":
+              return val;
+            default:
+              errors.push(`invalid sql expression in insert columns`);
+              return val;
+          }
+        });
+
+        restore();
+
+        const values = e.values.map(sqlExpr) as SQLPackExpression[];
+
+        for (const [i, pack] of values.entries()) {
+          if (pack.values.length === columns.length) {
+            for (const [j, v] of pack.values.entries()) {
+              if (!typeEquals(v.type, columns[j].type)) {
+                errors.push(
+                  `insert values pack ${i} entry ${j} expected type ${columns[j].type.kind} found ${v.type.kind}`
+                );
+              }
+            }
+          } else {
+            errors.push(
+              `insert values pack ${i} expected ${columns.length} values received ${pack.values.length}`
+            );
+          }
+        }
+
+        return {
+          kind: "SQLInsertExpression",
+          table,
+          columns: {
+            kind: "SQLPackExpression",
+            type: { kind: "IntrinsicType" },
+            values: columns,
+          },
+          values,
+          type: { kind: "IdentifierType", name: "error" },
+        };
+      }
+      case "UntypedSQLIdentifierExpression": {
+        let type = ctx.get(e.name);
+        if (type === null) {
+          errors.push(`Unknown sql identifier ${e.name}`);
+          type = { kind: "UnknownType" };
+        }
+
+        return {
+          kind: "SQLIdentifierExpression",
+          name: e.name,
+          type,
+        };
+      }
+      case "UntypedSQLColumnIdentifierExpression": {
+        let type = ctx.get(e.name);
+        if (type === null) {
+          errors.push(`Unknown sql column ${e.name}`);
+          type = { kind: "UnknownType" };
+        }
+
+        return {
+          kind: "SQLColumnIdentifierExpression",
+          name: e.name,
+          type,
+        };
+      }
+      case "UntypedSQLIntegerExpression":
+        return {
+          kind: "SQLIntegerExpression",
+          value: e.value,
+          type: { kind: "IntegerType" },
+        };
+      case "UntypedSQLStringExpression":
+        return {
+          kind: "SQLStringExpression",
+          value: e.value,
+          type: { kind: "StringType" },
+        };
       case "UntypedSQLColumnExpression": {
         const expression = sqlExpr(e.expression);
         return {
@@ -1774,6 +2193,17 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           alias: e.alias,
         };
       }
+      case "UntypedSQLPackExpression": {
+        const values = e.values.map(sqlExpr);
+        return {
+          kind: "SQLPackExpression",
+          type: {
+            kind: "StructType",
+            properties: values.map((x) => ({ name: "", type: x.type })),
+          },
+          values,
+        };
+      }
     }
   }
 
@@ -1783,6 +2213,7 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
       case "UntypedHTMLExpression":
         return htmlExpr(e) as HTMLBlockExpression | HTMLExpression;
       case "UntypedSQLSelectExpression":
+      case "UntypedSQLInsertExpression":
         return sqlExpr(e) as SQLSelectExpression;
       case "UntypedIntegerExpression":
         return {
@@ -1936,6 +2367,68 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           type,
         };
       }
+      case "UntypedCallExpression": {
+        const left = expr(e.left);
+        const ty = resolveType(left.type);
+        const args = e.args.map(expr);
+        let type: Type = { kind: "UnknownType" };
+
+        if (ty.kind === "FunctionType") {
+          if (args.length === ty.from.length) {
+            type = ty.to;
+            for (const [i, arg] of args.entries()) {
+              if (!typeEquals(ty.from[i].type, arg.type)) {
+                type = { kind: "UnknownType" };
+                errors.push(
+                  `argument ${i} expected ${ty.from[i].type.kind} received ${arg.type.kind}`
+                );
+              }
+            }
+          } else {
+            errors.push(
+              `Cannot call function expected ${ty.from.length} arguments received ${args.length} arguments`
+            );
+          }
+        } else {
+          errors.push(
+            `Cannot call an expression which does not have a function type`
+          );
+        }
+
+        return {
+          kind: "CallExpression",
+          args,
+          left,
+          type,
+        };
+      }
+      case "UntypedDotExpression": {
+        const l = expr(e.left);
+        const ty = resolveType(l.type);
+        let type: Type = { kind: "UnknownType" };
+
+        if (ty.kind === "StructType") {
+          const prop = ty.properties.find((x) => x.name === e.name);
+          if (prop !== undefined) {
+            type = prop.type;
+          } else {
+            errors.push(
+              `property ${e.name} does not exist on type: ${JSON.stringify(
+                ty.properties
+              )}`
+            );
+          }
+        } else {
+          errors.push("Cannot dot a non struct like expression");
+        }
+
+        return {
+          kind: "DotExpression",
+          left: l,
+          name: e.name,
+          type,
+        };
+      }
     }
   }
 
@@ -1978,13 +2471,15 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
               )
               // by default all variables are strings
               .map((x) => [x.name, { kind: "StringType" }])
-          )
+          ),
+          new Map(d.parameters.map((x) => [x.name, x.type]))
         );
         return {
           kind: "HTTPDefinition",
-          expression,
-          endpoint: d.endpoint,
           verb: d.verb,
+          endpoint: d.endpoint,
+          parameters: d.parameters,
+          expression,
         };
       }
       case "UntypedDeclareDefinition": {
@@ -1996,6 +2491,16 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           definition,
         };
       }
+      case "UntypedRawGoSourceDefinition":
+        return {
+          kind: "RawGoSourceDefinition",
+          source: d.source,
+        };
+      case "UntypedRawGoSourceImportDefinition":
+        return {
+          kind: "RawGoSourceImportDefinition",
+          source: d.source,
+        };
       case "UntypedTableDefinition":
         return {
           ...d,
@@ -2030,7 +2535,11 @@ const parser = generate(`
   __ = [ \\t\\r\\n]+
 
   identifier 
-    = chars: ([a-zA-Z][a-zA-Z0-9_]*)
+    = chars: ([a-zA-Z_][a-zA-Z0-9_]*)
+    { return chars[0] + chars[1].join('') }
+
+  html_identifier
+    = chars: ([a-zA-Z_][a-zA-Z0-9_-]*)
     { return chars[0] + chars[1].join('') }
 
   sql_identifier 
@@ -2070,6 +2579,16 @@ const parser = generate(`
     / declare_definition
     / struct_definition
     / table_definition
+    / raw_go_import_definition
+    / raw_go_definition
+
+  raw_go_definition
+    = "#go" _ source: (c: [^#]* { return c.join('') }) _ "#end"
+    { return { kind: "UntypedRawGoSourceDefinition", source } }
+
+  raw_go_import_definition
+    = "#go_import" _ source: (c: [^#]* { return c.join('') }) _ "#end"
+    { return { kind: "UntypedRawGoSourceImportDefinition", source } }
 
   struct_definition
     = "struct" __ name: identifier _ "{" _ properties: (h: struct_property t: (_ "," _ @struct_property)* (_ ",")? { return [h, ...t] })? _ "}"
@@ -2088,12 +2607,12 @@ const parser = generate(`
     { return { kind: "UntypedDeclareDefinition", definition } }
 
   function_definition
-    = "func" __ name: identifier _ "(" _  parameters: (h: parameter t: (_ "," _ @parameter)* (_ ",")? { return [h, ...t] })? _")" _ ":" _ ret: type _ expression: block_expression
+    = "func" __ name: identifier _ "(" _  parameters: (h: parameter t: (_ "," _ @parameter)* (_ ",")? _ { return [h, ...t] })? ")" _ ":" _ ret: type _ expression: block_expression
     { return { kind: "UntypedFunctionDefinition", name, parameters: parameters ?? [], expression, returnType: ret } }
 
   http_definition
-    = verb: http_verb __ endpoint: http_endpoint _ "(" _ ")" _ expression: block_expression
-    { return { kind: "UntypedHTTPDefinition", verb, endpoint, expression } }
+    = verb: http_verb __ endpoint: http_endpoint _ "(" _ parameters: (h: parameter (_ ",")? _ { return [h] })? ")" _ expression: block_expression
+    { return { kind: "UntypedHTTPDefinition", verb, endpoint, parameters: parameters ?? [], expression } }
 
   http_verb
     = "get" / "put" / "post" / "patch" / "delete"
@@ -2128,7 +2647,14 @@ const parser = generate(`
   block_expression
     = "{" expressions: (_ @expression)* _ "}"
     { return { kind: "UntypedBlockExpression", expressions } }
-    / literal  
+    / postfix_expression
+  
+  postfix_expression
+    = head: literal tail:(
+      (_ "." _ name: identifier { return { kind: 'UntypedDotExpression', name }})
+      / (_ "(" _ args: (h: expression t: (_ "," _ @expression)* (_ ",")? _ { return [h, ...t] })? ")" { return { kind: 'UntypedCallExpression', args: args ?? [] }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
 
   literal
     = string_expression
@@ -2136,6 +2662,7 @@ const parser = generate(`
     / html_block_expression
     / html_expression
     / sql_select_expression
+    / sql_insert_expression
     / for_expression
     / identifier_expression
     
@@ -2147,22 +2674,32 @@ const parser = generate(`
     / html_text_expression
 
   sql_select_expression
-    = "select" __ columns: (h: sql_column_expression t: (_ "," _ @sql_column_expression)* { return [h, ...t] }) from: (__ @sql_from_expression)?
+    = "select" __ columns: (h: sql_column_expression t: (_ "," _ @sql_column_expression)* { return [h, ...t] }) from: (__ "from" __ @sql_from_expression)?
     { return { kind: "UntypedSQLSelectExpression", columns, from: from ?? undefined } }
+
+  sql_insert_expression
+    = "insert" __ "into" __ table: sql_from_expression _ columns: sql_pack_expression __ "values" __ values: (h: sql_pack_expression q: (_ "," _ @sql_pack_expression)* { return [h, ...q] })
+    { return { kind: "UntypedSQLInsertExpression", table, columns, values } }
 
   sql_column_expression
     = expression: sql_expression alias: (__ "as" __ @identifier)?
     { return { kind: "UntypedSQLColumnExpression", expression, alias: alias ?? undefined } }
 
   sql_from_expression
-    = "from" __ table: sql_expression alias: (__ "as" __ @identifier)?
+    = table: sql_expression alias: (__ "as" __ @identifier)?
     { return { kind: "UntypedSQLFromExpression", table, alias: alias ?? undefined } }
+
+  sql_pack_expression
+    = "(" _ values: (h: sql_expression w: (_ "," _ @sql_expression)* { return [h, ...w] }) _ ")"
+    { return { kind: "UntypedSQLPackExpression", values } }
 
   sql_expression
     = sql_column_identifier_expression
     / sql_string_expression
     / sql_integer_expression
     / sql_boolean_expression
+    / sql_pack_expression
+    / capture_expression
     / sql_identifier_expression
 
   sql_column_identifier_expression
@@ -2183,7 +2720,7 @@ const parser = generate(`
 
   sql_identifier_expression
     = name: identifier
-    { return { kind: "UntypedSQLIntegerExpression", name } }
+    { return { kind: "UntypedSQLIdentifierExpression", name } }
 
   html_block_expression
     = "<" prefix: (_ openTag: identifier attributes: html_attributes { return { openTag, attributes }})? _ ">" expressions: (_ @sub_html_expression)* _ "</" _ closeTag: (@identifier _)? ">"
@@ -2197,16 +2734,16 @@ const parser = generate(`
     = (__ @html_attribute)*
 
   html_attribute
-    = name: identifier _ "=" _ value: sub_html_expression
+    = name: html_identifier _ "=" _ value: sub_html_expression
     { return { name, value } }
 
   html_text_expression
-    = chars: [^<{]+
+    = chars: [^<$]+
     { return { kind: "UntypedHTMLTextExpression", value: chars.join('').trim() } }
 
   capture_expression
     = "\${" _  expression: expression _ "}"
-    { return { kind: "UntypedHTMLCaptureExpression", expression } }
+    { return { kind: "UntypedCaptureExpression", expression } }
 
   string_expression
     = "\\"" chars: [^\\"]* "\\""
