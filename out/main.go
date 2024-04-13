@@ -1,29 +1,30 @@
 package main
 
 import (
-	"database/sql"
-	"net/http"
-	"strconv"
-
-	"github.com/go-playground/validator"
+  "strconv"
+  "net/http"
+  "database/sql"
+  "github.com/go-playground/validator"
 
 	"github.com/labstack/echo/v4"
-	_ "github.com/lib/pq"
-
-	// raw imports
-
-	raw_uuid "github.com/google/uuid"
+  _ "github.com/lib/pq"
 )
+
+// raw imports
+
+import raw_uuid "github.com/google/uuid"
+
 
 // raw sources
 
 func uuid() string {
-	return raw_uuid.New().String()
+  return raw_uuid.New().String() 
 }
 
-type create_item_input = struct {
-	Name string `form:"name" validate:"required"`
+type create_item_input = struct  {
+  Name string `form:"name" validate:"required"`
 }
+
 
 // start standard prelude
 
@@ -39,7 +40,7 @@ func (cv *Validator) Validate(i interface{}) error {
 }
 
 var (
-	db *sql.DB = nil
+  db *sql.DB = nil
 )
 
 type Component func(echo.Context) error
@@ -138,94 +139,126 @@ func collect[T any](iter Iterator[T]) ([]T, error) {
 // start non http definitions
 
 type item struct {
-	Id   string
+	Id string
 	Name string
 }
 
-func page(title string, children Component) Component {
-	return func(c echo.Context) error {
-		return (func() error {
-			WriteString(c, "<!doctype html><html")
-			WriteString(c, ">")
-			(func() error {
-				WriteString(c, "<head")
-				WriteString(c, ">")
-				(func() error {
-					WriteString(c, "<script")
-					WriteString(c, " src=\"")
-					WriteString(c, "https://unpkg.com/htmx.org@1.9.11")
-					WriteString(c, "\"")
-					WriteString(c, ">")
-					WriteString(c, "</script>")
-					return nil
-				})()
-				(func() error {
-					WriteString(c, "<script")
-					WriteString(c, " src=\"")
-					WriteString(c, "https://cdn.tailwindcss.com")
-					WriteString(c, "\"")
-					WriteString(c, ">")
-					WriteString(c, "</script>")
-					return nil
-				})()
-				(func() error {
-					WriteString(c, "<title")
-					WriteString(c, ">")
-					WriteString(c, title)
-					WriteString(c, "</title>")
-					return nil
-				})()
-				WriteString(c, "</head>")
-				return nil
-			})()
-			(func() error {
-				WriteString(c, "<body")
-				WriteString(c, " hx-boost=\"")
-				WriteString(c, "true")
-				WriteString(c, "\"")
-				WriteString(c, ">")
-				children(c)
-				WriteString(c, "</body>")
-				return nil
-			})()
-			WriteString(c, "</html>")
-			return nil
-		})()
-	}
+func page (title string,children Component) Component {
+return func (c echo.Context) error {
+return (func () error {
+WriteString(c,"<!doctype html><html")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<head")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<script")
+WriteString(c," src=\"")
+(func () error {
+return WriteString(c,"https://unpkg.com/htmx.org@1.9.11")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"</script>")
+return nil
+})()
+(func () error {
+WriteString(c,"<script")
+WriteString(c," src=\"")
+(func () error {
+return WriteString(c,"https://cdn.tailwindcss.com")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"</script>")
+return nil
+})()
+(func () error {
+WriteString(c,"<title")
+WriteString(c,">")
+WriteString(c,title)
+WriteString(c,"</title>")
+return nil
+})()
+WriteString(c,"</head>")
+return nil
+})()
+(func () error {
+WriteString(c,"<body")
+WriteString(c," hx-boost=\"")
+(func () error {
+return WriteString(c,"true")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+children(c)
+WriteString(c,"</body>")
+return nil
+})()
+WriteString(c,"</html>")
+return nil
+})()
+}
 }
 
-func _0() Iterator[struct {
-	Id   string
+func row (children Component) Component {
+return func (c echo.Context) error {
+return (func () error {
+WriteString(c,"<div")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"flex flex-row gap-2")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+children(c)
+WriteString(c,"</div>")
+return nil
+})()
+}
+}
+
+func _0 () Iterator[struct {
+	Id string
 	Name string
 }] {
-	var obj struct {
-		Id   string
-		Name string
-	}
-	rows, err := db.Query(`select id, name from item`)
-	if err != nil {
-		panic("bad query: " + err.Error())
-	}
-	return func(f func(struct {
-		Id   string
-		Name string
-	}) error) (bool, error) {
-		if rows.Next() {
-			rows.Scan(&obj.Id, &obj.Name)
-			return false, f(obj)
-		} else {
-			rows.Close()
-			return true, nil
-		}
-	}
+var obj struct {
+	Id string
+	Name string
+}
+rows, err := db.Query(`select id, name from item`, )
+if err != nil {
+  panic("bad query: " + err.Error())
+}
+return func(f func(struct {
+	Id string
+	Name string
+}) error) (bool, error) {
+  if rows.Next() {
+    rows.Scan(&obj.Id, &obj.Name)
+    return false, f(obj)
+  } else {
+    rows.Close()
+    return true, nil
+  }
+}
 }
 
-func _1(n_0 string, n_1 string) error {
-	_, err := db.Exec(`insert into item (id, name) values ($1, $2)`, n_0, n_1)
-	if err != nil {
-		panic("bad query: " + err.Error())
-	}
-	return nil
+func _1 (n_0 string,n_1 string) error {
+_, err := db.Exec(`insert into item (id, name) values ($1, $2)`, n_0,n_1)
+if err != nil {
+  panic("bad query: " + err.Error())
+}
+return nil
+
+}
+
+func _2 (n_0 string) error {
+_, err := db.Exec(`delete from item where (id=$1)`, n_0)
+if err != nil {
+  panic("bad query: " + err.Error())
+}
+return nil
 
 }
 
@@ -233,17 +266,17 @@ func _1(n_0 string, n_1 string) error {
 
 func main() {
 	connStr := "postgresql://root:password@localhost:5432?sslmode=disable"
-	conn, err := sql.Open("postgres", connStr)
+  conn, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic("Could not connect to the database at " + connStr)
 	}
-	db = conn
+  db = conn
 	defer db.Close()
 
 	e := echo.New()
-	e.Validator = &Validator{validator: validator.New()}
+  e.Validator = &Validator{validator: validator.New()}
 
-	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+  e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			path := c.Request().URL.Path
 			if path[len(path)-1] != '/' {
@@ -253,180 +286,235 @@ func main() {
 		}
 	})
 
-	// start http definitions
+// start http definitions
 
-	e.GET("/", func(c echo.Context) error {
+e.GET("/", func (c echo.Context) error {
+ 
+return page("hello",func (c echo.Context) error {
+return (func () error {
+return (func () error {
+WriteString(c,"<h1")
+WriteString(c,">")
+WriteString(c,"Nitro Rules")
+WriteString(c,"</h1>")
+return nil
+})()
+})()
+})(c) 
+})
 
-		return page("hello", func(c echo.Context) error {
-			return (func() error {
-				return (func() error {
-					WriteString(c, "<h1")
-					WriteString(c, ">")
-					WriteString(c, "Nitro Rules")
-					WriteString(c, "</h1>")
-					return nil
-				})()
-			})()
-		})(c)
-	})
+e.GET("/:msg/", func (c echo.Context) error {
+ msg := ""
+if err := echo.PathParamsBinder(c).String("msg", &msg).BindError(); err != nil {
+  return c.String(http.StatusBadRequest, "bad request")
+}
 
-	e.GET("/:msg/", func(c echo.Context) error {
-		msg := ""
-		if err := echo.PathParamsBinder(c).String("msg", &msg).BindError(); err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
-		}
+return page(msg,func (c echo.Context) error {
+return (func () error {
+return (func () error {
+WriteString(c,"<h1")
+WriteString(c,">")
+WriteString(c,"Nitro Rules")
+WriteString(c,"</h1>")
+return nil
+})()
+})()
+})(c) 
+})
 
-		return page(msg, func(c echo.Context) error {
-			return (func() error {
-				return (func() error {
-					WriteString(c, "<h1")
-					WriteString(c, ">")
-					WriteString(c, "Nitro Rules")
-					WriteString(c, "</h1>")
-					return nil
-				})()
-			})()
-		})(c)
-	})
+e.GET("/items/", func (c echo.Context) error {
+ 
+return page("items",func (c echo.Context) error {
+return (func () error {
+(func () error {
+WriteString(c,"<a")
+WriteString(c," href=\"")
+(func () error {
+return WriteString(c,"/item/new")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"Create New Item")
+WriteString(c,"</a>")
+return nil
+})()
+return (func () error {
+WriteString(c,"<div")
+WriteString(c," hx-confirm=\"")
+(func () error {
+return WriteString(c,"Are you sure want to delete this?")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+exhaust(_0(), func (x struct {
+	Id string
+	Name string
+}) error {
+return (func () error {
+return row(func (c echo.Context) error {
+return (func () error {
+(func () error {
+WriteString(c,"<h1")
+WriteString(c,">")
+WriteString(c,(x.Name))
+WriteString(c,"</h1>")
+return nil
+})()
+return (func () error {
+WriteString(c,"<button")
+WriteString(c," hx-delete=\"")
+(func () error {
+WriteString(c,"/item/")
+return WriteString(c,(x.Id))
+})()
+WriteString(c,"\"")
+WriteString(c," hx-target=\"")
+(func () error {
+return WriteString(c,"closest div")
+})()
+WriteString(c,"\"")
+WriteString(c," hx-swap=\"")
+(func () error {
+return WriteString(c,"delete")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"Delete")
+WriteString(c,"</button>")
+return nil
+})()
+})()
+})(c)
+})()
+})
+WriteString(c,"</div>")
+return nil
+})()
+})()
+})(c) 
+})
 
-	e.GET("/items/", func(c echo.Context) error {
+e.GET("/item/new/", func (c echo.Context) error {
+ 
+return page("Create Item",func (c echo.Context) error {
+return (func () error {
+return (func () error {
+WriteString(c,"<form")
+WriteString(c," hx-post=\"")
+(func () error {
+return WriteString(c,"/item")
+})()
+WriteString(c,"\"")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"flex flex-col gap-2 border p-10 border-black")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<h1")
+WriteString(c,">")
+WriteString(c,"Create new Item")
+WriteString(c,"</h1>")
+return nil
+})()
+(func () error {
+WriteString(c,"<fieldset")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500")
+})()
+WriteString(c,"\"")
+WriteString(c," err=\"")
+(func () error {
+return WriteString(c,"Please enter a name")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+(func () error {
+WriteString(c,"<label")
+WriteString(c," for=\"")
+(func () error {
+return WriteString(c,"name")
+})()
+WriteString(c,"\"")
+WriteString(c,">")
+WriteString(c,"Name")
+WriteString(c,"</label>")
+return nil
+})()
+(func () error {
+WriteString(c,"<input")
+WriteString(c," id=\"")
+(func () error {
+return WriteString(c,"name")
+})()
+WriteString(c,"\"")
+WriteString(c," class=\"")
+(func () error {
+return WriteString(c,"border p-2 invalid:border-red-500")
+})()
+WriteString(c,"\"")
+WriteString(c," name=\"")
+(func () error {
+return WriteString(c,"name")
+})()
+WriteString(c,"\"")
+WriteString(c," required=\"")
+(func () error {
+return WriteString(c,"true")
+})()
+WriteString(c,"\"")
+WriteString(c," />")
+return nil
+})()
+WriteString(c,"</fieldset>")
+return nil
+})()
+(func () error {
+WriteString(c,"<button")
+WriteString(c,">")
+WriteString(c,"Create")
+WriteString(c,"</button>")
+return nil
+})()
+WriteString(c,"</form>")
+return nil
+})()
+})()
+})(c) 
+})
 
-		return page("items", func(c echo.Context) error {
-			return (func() error {
-				(func() error {
-					WriteString(c, "<a")
-					WriteString(c, " href=\"")
-					WriteString(c, "/create-item")
-					WriteString(c, "\"")
-					WriteString(c, ">")
-					WriteString(c, "Create New Item")
-					WriteString(c, "</a>")
-					return nil
-				})()
-				return exhaust(_0(), func(x struct {
-					Id   string
-					Name string
-				}) error {
-					return (func() error {
-						return (func() error {
-							WriteString(c, "<h1")
-							WriteString(c, " class=\"")
-							WriteString(c, "flex flex-row gap-2")
-							WriteString(c, "\"")
-							WriteString(c, ">")
-							(func() error {
-								WriteString(c, "<div")
-								WriteString(c, ">")
-								WriteString(c, (x.Id))
-								WriteString(c, "</div>")
-								return nil
-							})()
-							WriteString(c, "-")
-							(func() error {
-								WriteString(c, "<div")
-								WriteString(c, ">")
-								WriteString(c, (x.Name))
-								WriteString(c, "</div>")
-								return nil
-							})()
-							WriteString(c, "</h1>")
-							return nil
-						})()
-					})()
-				})
-			})()
-		})(c)
-	})
+e.POST("/item/", func (c echo.Context) error {
+ 
+var payload create_item_input
+if err := c.Bind(&payload); err != nil {
+  return c.String(http.StatusBadRequest, "bad request")
+}
+if err = c.Validate(payload); err != nil {
+  return err
+}
 
-	e.GET("/create-item/", func(c echo.Context) error {
+return (func () error {
+return _1(uuid(),(payload.Name))
+})() 
+})
 
-		return page("Create Item", func(c echo.Context) error {
-			return (func() error {
-				return (func() error {
-					WriteString(c, "<form")
-					WriteString(c, " hx-post=\"")
-					WriteString(c, "/api/item")
-					WriteString(c, "\"")
-					WriteString(c, " class=\"")
-					WriteString(c, "flex flex-col gap-2 border p-10 border-black")
-					WriteString(c, "\"")
-					WriteString(c, ">")
-					(func() error {
-						WriteString(c, "<h1")
-						WriteString(c, ">")
-						WriteString(c, "Create new Item")
-						WriteString(c, "</h1>")
-						return nil
-					})()
-					(func() error {
-						WriteString(c, "<fieldset")
-						WriteString(c, " class=\"")
-						WriteString(c, "flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500")
-						WriteString(c, "\"")
-						WriteString(c, " err=\"")
-						WriteString(c, "Please enter a name")
-						WriteString(c, "\"")
-						WriteString(c, ">")
-						(func() error {
-							WriteString(c, "<label")
-							WriteString(c, " for=\"")
-							WriteString(c, "name")
-							WriteString(c, "\"")
-							WriteString(c, ">")
-							WriteString(c, "Name")
-							WriteString(c, "</label>")
-							return nil
-						})()
-						(func() error {
-							WriteString(c, "<input")
-							WriteString(c, " id=\"")
-							WriteString(c, "name")
-							WriteString(c, "\"")
-							WriteString(c, " class=\"")
-							WriteString(c, "border p-2 invalid:border-red-500")
-							WriteString(c, "\"")
-							WriteString(c, " name=\"")
-							WriteString(c, "name")
-							WriteString(c, "\"")
-							WriteString(c, " required=\"")
-							WriteString(c, "true")
-							WriteString(c, "\"")
-							WriteString(c, " />")
-							return nil
-						})()
-						WriteString(c, "</fieldset>")
-						return nil
-					})()
-					(func() error {
-						WriteString(c, "<button")
-						WriteString(c, ">")
-						WriteString(c, "Create")
-						WriteString(c, "</button>")
-						return nil
-					})()
-					WriteString(c, "</form>")
-					return nil
-				})()
-			})()
-		})(c)
-	})
+e.DELETE("/item/:id/", func (c echo.Context) error {
+ id := ""
+if err := echo.PathParamsBinder(c).String("id", &id).BindError(); err != nil {
+  return c.String(http.StatusBadRequest, "bad request")
+}
 
-	e.POST("/api/item/", func(c echo.Context) error {
+return (func () error {
+return _2(id)
+})() 
+})	
 
-		var payload create_item_input
-		if err := c.Bind(&payload); err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
-		}
-		if err = c.Validate(payload); err != nil {
-			return err
-		}
-
-		return (func() error {
-			return _1(uuid(), (payload.Name))
-		})()
-	})
-
-	// end http definitions
+// end http definitions
 
 	e.Logger.Fatal(e.Start(":4000"))
 }
+
+
+

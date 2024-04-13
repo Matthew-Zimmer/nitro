@@ -47,6 +47,11 @@ func page(title: str, children: html): html
     </body>
   </html>
 
+func row(children: html): html
+  <div class="flex flex-row gap-2">
+    ${children}
+  </div>
+
 get / ()
   <page title="hello">
     <h1>
@@ -63,19 +68,22 @@ get /${msg} ()
 
 get /items ()
   <page title="items">  
-    <a href="/create-item">Create New Item</a>
-    ${for x in select id, name from item {
-      <h1 class="flex flex-row gap-2">
-        <div>${x.id}</div>
-         - 
-         <div>${x.name}</div>
-      </h1>
-    }}
+    <a href="/item/new">Create New Item</a>
+    <div hx-confirm="Are you sure want to delete this?">
+      ${for x in select id, name from item {
+        <row>
+          <h1>${x.name}</h1>
+          <button hx-delete="/item/${x.id}" hx-target="closest div" hx-swap="delete">
+            Delete
+          </button>
+        </row>
+      }}
+    </div>
   </page>
 
-get /create-item ()
+get /item/new ()
   <page title="Create Item">
-    <form hx-post="/api/item" class="flex flex-col gap-2 border p-10 border-black">
+    <form hx-post="/item" class="flex flex-col gap-2 border p-10 border-black">
       <h1>Create new Item</h1>
       <fieldset class="flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500" err="Please enter a name">
         <label for="name">Name</label>
@@ -97,9 +105,16 @@ type create_item_input = struct  {
 }
 #end
 
-post /api/item (payload: create_item_input) {
+post /item (payload: create_item_input) {
   insert into item
     (id, name)
   values 
     (${uuid()}, ${payload.name})
+}
+
+
+declare func sql_op_eq(l: str, r: str): bool intrinsic
+
+delete /item/${id} () {
+  delete from item where id = ${id}
 }

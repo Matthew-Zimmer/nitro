@@ -1,6 +1,22 @@
 import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import { generate } from "peggy";
 
+type SQLInfixOperator =
+  | "="
+  | "!="
+  | "is"
+  | "or"
+  | "and"
+  | "<"
+  | ">"
+  | "<="
+  | ">="
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "%";
+
 type UntypedNitroModule = {
   kind: "UntypedNitroModule";
   definitions: UntypedDefinition[];
@@ -75,7 +91,9 @@ type UntypedExpression =
   | UntypedLetExpression
   | UntypedSQLSelectExpression
   | UntypedSQLInsertExpression
+  | UntypedSQLDeleteExpression
   | UntypedBlockExpression
+  | UntypedCaptureExpression
   | UntypedAddExpression
   | UntypedDotExpression
   | UntypedCallExpression;
@@ -91,7 +109,28 @@ type UntypedSQLExpression =
   | UntypedSQLPackExpression
   | UntypedSQLSelectExpression
   | UntypedSQLInsertExpression
+  | UntypedSQLDeleteExpression
+  | UntypedSQLWhereExpression
+  | UntypedSQLInfixExpression
   | UntypedCaptureExpression;
+
+type UntypedSQLDeleteExpression = {
+  kind: "UntypedSQLDeleteExpression";
+  table: UntypedSQLFromExpression;
+  where?: UntypedSQLWhereExpression;
+};
+
+type UntypedSQLWhereExpression = {
+  kind: "UntypedSQLWhereExpression";
+  cond: UntypedSQLExpression;
+};
+
+type UntypedSQLInfixExpression = {
+  kind: "UntypedSQLInfixExpression";
+  left: UntypedSQLExpression;
+  op: SQLInfixOperator;
+  right: UntypedSQLExpression;
+};
 
 type UntypedBlockExpression = {
   kind: "UntypedBlockExpression";
@@ -139,6 +178,7 @@ type UntypedSQLSelectExpression = {
   kind: "UntypedSQLSelectExpression";
   columns: UntypedSQLColumnExpression[];
   from?: UntypedSQLFromExpression;
+  where?: UntypedSQLWhereExpression;
 };
 
 type UntypedSQLPackExpression = {
@@ -184,7 +224,7 @@ type UntypedIntegerExpression = {
 
 type UntypedStringExpression = {
   kind: "UntypedStringExpression";
-  value: string;
+  parts: (string | UntypedCaptureExpression)[];
 };
 
 type UntypedIdentifierExpression = {
@@ -227,6 +267,7 @@ type UntypedDotExpression = {
 type Type =
   | StringType
   | IntegerType
+  | BooleanType
   | HTMLType
   | FunctionType
   | IteratorType
@@ -234,6 +275,10 @@ type Type =
   | IdentifierType
   | StructType
   | UnknownType;
+
+type BooleanType = {
+  kind: "BooleanType";
+};
 
 type StructType = {
   kind: "StructType";
@@ -351,6 +396,8 @@ type Expression =
   | LetExpression
   | SQLSelectExpression
   | SQLInsertExpression
+  | SQLDeleteExpression
+  | CaptureExpression
   | AddExpression
   | DotExpression
   | CallExpression;
@@ -365,8 +412,32 @@ type SQLExpression =
   | SQLFromExpression
   | SQLSelectExpression
   | SQLInsertExpression
+  | SQLDeleteExpression
   | SQLPackExpression
+  | SQLWhereExpression
+  | SQLInfixExpression
   | CaptureExpression;
+
+type SQLDeleteExpression = {
+  kind: "SQLDeleteExpression";
+  table: SQLFromExpression;
+  where?: SQLWhereExpression;
+  type: Type;
+};
+
+type SQLWhereExpression = {
+  kind: "SQLWhereExpression";
+  cond: SQLExpression;
+  type: Type;
+};
+
+type SQLInfixExpression = {
+  kind: "SQLInfixExpression";
+  left: SQLExpression;
+  op: SQLInfixOperator;
+  right: SQLExpression;
+  type: Type;
+};
 
 type BlockExpression = {
   kind: "BlockExpression";
@@ -422,6 +493,7 @@ type SQLSelectExpression = {
   kind: "SQLSelectExpression";
   columns: SQLColumnExpression[];
   from?: SQLFromExpression;
+  where?: SQLWhereExpression;
   type: Type;
 };
 
@@ -474,7 +546,7 @@ type IntegerExpression = {
 
 type StringExpression = {
   kind: "StringExpression";
-  value: string;
+  parts: (string | CaptureExpression)[];
   type: Type;
 };
 
@@ -594,11 +666,16 @@ type GoType =
   | GoStringType
   | GoComponentType
   | GoIntegerType
+  | GoBooleanType
   | GoErrorType
   | GoStructType
   | GoIdentifierType
   | GoContextType
   | GoIteratorType;
+
+type GoBooleanType = {
+  kind: "GoBooleanType";
+};
 
 type GoStructType = {
   kind: "GoStructType";
@@ -696,8 +773,6 @@ type GoInfixExpression = {
   right: GoExpression;
 };
 
-function writeStringExpr(value: string): GoExpression;
-function writeStringExpr(value: GoExpression): GoExpression;
 function writeStringExpr(value: string | GoExpression): GoExpression {
   return {
     kind: "GoApplicationExpression",
@@ -711,8 +786,6 @@ function writeStringExpr(value: string | GoExpression): GoExpression {
   };
 }
 
-function writeIntegerExpr(value: number): GoExpression;
-function writeIntegerExpr(value: GoExpression): GoExpression;
 function writeIntegerExpr(value: number | GoExpression): GoExpression {
   return {
     kind: "GoApplicationExpression",
@@ -756,13 +829,21 @@ function sqlQuery(e: SQLExpression): [string, Expression[]] {
       case "SQLSelectExpression":
         return `select ${e.columns.map(imp).join(", ")}${
           e.from === undefined ? "" : ` from ${imp(e.from)}`
-        }`;
+        }${e.where === undefined ? "" : ` ${imp(e.where)}`}`;
       case "SQLInsertExpression":
         return `insert into ${imp(e.table)} ${imp(e.columns)} values ${e.values
           .map(imp)
           .join(", ")}`;
       case "SQLPackExpression":
         return `(${e.values.map(imp).join(", ")})`;
+      case "SQLDeleteExpression":
+        return `delete from ${imp(e.table)}${
+          e.where === undefined ? "" : ` ${imp(e.where)}`
+        }`;
+      case "SQLInfixExpression":
+        return `(${imp(e.left)}${e.op}${imp(e.right)})`;
+      case "SQLWhereExpression":
+        return `where ${imp(e.cond)}`;
     }
   }
   const query = imp(e);
@@ -896,6 +977,7 @@ function toGo(
               return writeIntegerExpr(expr(e.expression));
             case "IdentifierType":
             case "StructType":
+            case "BooleanType":
               throw new Error(`What should we do here`);
             // RFC: Iterators still feel a bit magic like the toGo:expr function is doing too much
             // which it may be
@@ -917,14 +999,28 @@ function toGo(
             case "IntrinsicType":
               throw new Error(`WTF`);
           }
-        case "StringExpression":
-          return promote ? writeStringExpr(e.value) : expr(e);
+        case "StringExpression": {
+          // return promote ? writeStringExpr(e.value) : expr(e);
+          if (promote) {
+            return {
+              kind: "GoBlockExpression",
+              expressions: e.parts.map((x) =>
+                writeStringExpr(typeof x === "string" ? x : expr(x))
+              ),
+              type: { kind: "GoErrorType" },
+            };
+          } else {
+            return expr(e);
+          }
+        }
       }
     };
     return imp(e);
   }
 
-  function sql(e: SQLSelectExpression | SQLInsertExpression): GoExpression {
+  function sql(
+    e: SQLSelectExpression | SQLInsertExpression | SQLDeleteExpression
+  ): GoExpression {
     switch (e.kind) {
       case "SQLSelectExpression": {
         const name = nextGeneratedName();
@@ -983,6 +1079,7 @@ return func(f func(${innerType}) error) (bool, error) {
           args: captures.map(expr),
         };
       }
+      case "SQLDeleteExpression":
       case "SQLInsertExpression": {
         const name = nextGeneratedName();
         const [query, captures] = sqlQuery(e);
@@ -1027,7 +1124,10 @@ return nil
         return html(e);
       case "SQLSelectExpression":
       case "SQLInsertExpression":
+      case "SQLDeleteExpression":
         return sql(e);
+      case "CaptureExpression":
+        return expr(e.expression);
       case "IntegerExpression":
         return {
           kind: "GoIntegerExpression",
@@ -1039,8 +1139,30 @@ return nil
           expressions: e.expressions.map(expr),
           type: type(e.type),
         };
-      case "StringExpression":
-        return { kind: "GoStringExpression", value: e.value };
+      case "StringExpression": {
+        const allStrings = e.parts.every((x) => typeof x === "string");
+        if (allStrings) {
+          return {
+            kind: "GoStringExpression",
+            value: e.parts.join(""),
+          };
+        } else {
+          // this may reverse the order
+          const convertToGo = (x: string | CaptureExpression): GoExpression =>
+            typeof x === "string"
+              ? { kind: "GoStringExpression", value: x }
+              : expr(x);
+          return e.parts.slice(1).reduce(
+            (p, c) => ({
+              kind: "GoInfixExpression" as const,
+              left: p,
+              op: "+",
+              right: convertToGo(c),
+            }),
+            convertToGo(e.parts[0])
+          );
+        }
+      }
       case "IdentifierExpression":
         return {
           kind: "GoIdentifierExpression",
@@ -1160,6 +1282,8 @@ function toGoSource(e: GoExpression | GoType | GoDefinition): string {
       return `string`;
     case "GoIntegerType":
       return `int`;
+    case "GoBooleanType":
+      return `bool`;
     case "GoErrorType":
       return `error`;
     case "GoContextType":
@@ -1542,6 +1666,8 @@ function type(t: Type): GoType {
       return { kind: "GoStringType" };
     case "IntegerType":
       return { kind: "GoIntegerType" };
+    case "BooleanType":
+      return { kind: "GoBooleanType" };
     case "HTMLType":
       return { kind: "GoComponentType" };
     case "IteratorType":
@@ -1718,6 +1844,28 @@ class Context {
     this.pop(maps.length);
     return res;
   }
+
+  private matchPrefix(prefix: string): Map<string, Type>[] {
+    const maps: Map<string, Type>[] = [];
+
+    for (const map of this.scopes) {
+      const m = new Map<string, Type>();
+      for (const [n, t] of map.entries()) {
+        if (n.startsWith(prefix)) {
+          m.set(n, t);
+        }
+      }
+      if (m.size > 0) {
+        maps.push(m);
+      }
+    }
+
+    return maps;
+  }
+
+  onlySql() {
+    return this.load(...this.matchPrefix("sql_"));
+  }
 }
 
 function bidiffByName<T extends { name: string }, V extends { name: string }>(
@@ -1746,11 +1894,14 @@ function sqlExprName(e: SQLExpression, i: number): string {
     case "SQLSelectExpression":
     case "SQLBooleanExpression":
     case "CaptureExpression":
+    case "SQLInfixExpression":
       return `column${i + 1}`;
     case "SQLColumnExpression":
     case "SQLFromExpression":
     case "SQLInsertExpression":
+    case "SQLDeleteExpression":
     case "SQLPackExpression":
+    case "SQLWhereExpression":
       throw new Error(`wtf`);
   }
 }
@@ -1761,6 +1912,8 @@ function typeEquals(l: Type, r: Type): boolean {
       return r.kind === "StringType";
     case "IntegerType":
       return r.kind === "IntegerType";
+    case "BooleanType":
+      return r.kind === "BooleanType";
     case "HTMLType":
       return r.kind === "HTMLType";
     case "FunctionType":
@@ -1826,6 +1979,7 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
     switch (t.kind) {
       case "StringType":
       case "IntegerType":
+      case "BooleanType":
       case "HTMLType":
       case "IntrinsicType":
       case "UnknownType":
@@ -2035,8 +2189,126 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
     }
   }
 
+  function applicationType(func: Type, args: Type[]): Type {
+    let type: Type = { kind: "UnknownType" };
+    if (func.kind === "FunctionType") {
+      if (args.length === func.from.length) {
+        type = func.to;
+        for (const [i, arg] of args.entries()) {
+          if (!typeEquals(func.from[i].type, arg)) {
+            type = { kind: "UnknownType" };
+            errors.push(
+              `argument ${i} expected ${func.from[i].type.kind} received ${arg.kind}`
+            );
+          }
+        }
+      } else {
+        errors.push(
+          `Cannot call function expected ${func.from.length} arguments received ${args.length} arguments`
+        );
+      }
+    } else {
+      errors.push(
+        `Cannot call an expression which does not have a function type`
+      );
+    }
+
+    return type;
+  }
+
+  function sqlInfixFuncName(op: SQLInfixOperator): string {
+    switch (op) {
+      case "=":
+        return `sql_op_eq`;
+      case "!=":
+        return `sql_op_neq`;
+      case "is":
+        return `sql_op_is`;
+      case "<":
+        return `sql_op_lt`;
+      case ">":
+        return `sql_op_gt`;
+      case "<=":
+        return `sql_op_lteq`;
+      case ">=":
+        return `sql_op_gteq`;
+      case "+":
+        return `sql_op_add`;
+      case "-":
+        return `sql_op_sub`;
+      case "*":
+        return `sql_op_mul`;
+      case "/":
+        return `sql_op_div`;
+      case "%":
+        return `sql_op_mod`;
+      case "and":
+        return `sql_op_and`;
+      case "or":
+        return `sql_op_or`;
+    }
+  }
+
   function sqlExpr(e: UntypedSQLExpression): SQLExpression {
     switch (e.kind) {
+      case "UntypedSQLDeleteExpression": {
+        const restore = ctx.onlySql();
+
+        let table = sqlExpr(e.table) as SQLFromExpression;
+        const rt = resolveType(table.type);
+        if (rt.kind === "StructType") {
+          ctx.push(new Map(rt.properties.map((x) => [x.name, x.type])));
+        } else {
+          errors.push(`SQL from needs to be a struct type`);
+        }
+
+        const where: SQLWhereExpression | undefined =
+          e.where === undefined
+            ? undefined
+            : (sqlExpr(e.where) as SQLWhereExpression);
+
+        restore();
+
+        return {
+          kind: "SQLDeleteExpression",
+          table,
+          where,
+          type: { kind: "IdentifierType", name: "error" },
+        };
+      }
+      case "UntypedSQLInfixExpression": {
+        const left = sqlExpr(e.left);
+        const right = sqlExpr(e.right);
+        const type = applicationType(
+          expr({
+            kind: "UntypedIdentifierExpression",
+            name: sqlInfixFuncName(e.op),
+          }).type,
+          [left.type, right.type]
+        );
+
+        return {
+          kind: "SQLInfixExpression",
+          left,
+          op: e.op,
+          right,
+          type,
+        };
+      }
+      case "UntypedSQLWhereExpression": {
+        const cond = sqlExpr(e.cond);
+        if (cond.type.kind !== "BooleanType") {
+          errors.push(
+            `where condition needs to have type bool found: ${cond.type.kind}`
+          );
+        }
+
+        return {
+          kind: "SQLWhereExpression",
+          cond,
+          type: cond.type,
+        };
+      }
       case "UntypedCaptureExpression": {
         const expression = expr(e.expression);
         return {
@@ -2046,7 +2318,7 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
         };
       }
       case "UntypedSQLSelectExpression": {
-        const restore = ctx.load();
+        const restore = ctx.onlySql();
 
         let from: SQLFromExpression | undefined = undefined;
         if (e.from !== undefined) {
@@ -2072,17 +2344,23 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           },
         };
 
+        const where: SQLWhereExpression | undefined =
+          e.where === undefined
+            ? undefined
+            : (sqlExpr(e.where) as SQLWhereExpression);
+
         restore();
 
         return {
           kind: "SQLSelectExpression",
           from,
           columns,
+          where,
           type,
         };
       }
       case "UntypedSQLInsertExpression": {
-        const restore = ctx.load();
+        const restore = ctx.onlySql();
 
         let table = sqlExpr(e.table) as SQLFromExpression;
         const rt = resolveType(table.type);
@@ -2214,19 +2492,44 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
         return htmlExpr(e) as HTMLBlockExpression | HTMLExpression;
       case "UntypedSQLSelectExpression":
       case "UntypedSQLInsertExpression":
-        return sqlExpr(e) as SQLSelectExpression;
+      case "UntypedSQLDeleteExpression":
+        return sqlExpr(e) as Expression;
+      case "UntypedCaptureExpression": {
+        const expression = expr(e.expression);
+        return {
+          kind: "CaptureExpression",
+          expression,
+          type: expression.type,
+        };
+      }
       case "UntypedIntegerExpression":
         return {
           kind: "IntegerExpression",
           value: e.value,
           type: { kind: "IntegerType" },
         };
-      case "UntypedStringExpression":
+      case "UntypedStringExpression": {
+        const parts = e.parts.map((x) =>
+          typeof x === "string" ? x : (expr(x) as CaptureExpression)
+        );
+
+        let type: Type = { kind: "StringType" };
+
+        for (const [i, p] of parts.entries()) {
+          if (typeof p !== "string" && p.type.kind !== "StringType") {
+            errors.push(
+              `part ${i} of string is not a string type found ${p.type.kind}`
+            );
+            type = { kind: "UnknownType" };
+          }
+        }
+
         return {
           kind: "StringExpression",
-          value: e.value,
-          type: { kind: "StringType" },
+          parts,
+          type,
         };
+      }
       case "UntypedIdentifierExpression": {
         if (inDeclare && ["intrinsic"].includes(e.name)) {
           return {
@@ -2371,29 +2674,10 @@ function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
         const left = expr(e.left);
         const ty = resolveType(left.type);
         const args = e.args.map(expr);
-        let type: Type = { kind: "UnknownType" };
-
-        if (ty.kind === "FunctionType") {
-          if (args.length === ty.from.length) {
-            type = ty.to;
-            for (const [i, arg] of args.entries()) {
-              if (!typeEquals(ty.from[i].type, arg.type)) {
-                type = { kind: "UnknownType" };
-                errors.push(
-                  `argument ${i} expected ${ty.from[i].type.kind} received ${arg.type.kind}`
-                );
-              }
-            }
-          } else {
-            errors.push(
-              `Cannot call function expected ${ty.from.length} arguments received ${args.length} arguments`
-            );
-          }
-        } else {
-          errors.push(
-            `Cannot call an expression which does not have a function type`
-          );
-        }
+        let type = applicationType(
+          ty,
+          args.map((x) => x.type)
+        );
 
         return {
           kind: "CallExpression",
@@ -2554,12 +2838,17 @@ const parser = generate(`
   type
     = string_type
     / integer_type
+    / boolean_type
     / html_type
     / identifier_type
 
   string_type
     = "str"
     { return { kind: "StringType" } }
+
+  boolean_type
+    = "bool"
+    { return { kind: "BooleanType" } }
 
   integer_type
     = "i32"
@@ -2663,6 +2952,7 @@ const parser = generate(`
     / html_expression
     / sql_select_expression
     / sql_insert_expression
+    / sql_delete_expression
     / for_expression
     / identifier_expression
     
@@ -2674,12 +2964,50 @@ const parser = generate(`
     / html_text_expression
 
   sql_select_expression
-    = "select" __ columns: (h: sql_column_expression t: (_ "," _ @sql_column_expression)* { return [h, ...t] }) from: (__ "from" __ @sql_from_expression)?
-    { return { kind: "UntypedSQLSelectExpression", columns, from: from ?? undefined } }
+    = "select" __ columns: (h: sql_column_expression t: (_ "," _ @sql_column_expression)* { return [h, ...t] }) from: (__ "from" __ @sql_from_expression)? where: (__ @sql_where_expression)?
+    { return { kind: "UntypedSQLSelectExpression", columns, from: from ?? undefined, where: where ?? undefined } }
 
   sql_insert_expression
     = "insert" __ "into" __ table: sql_from_expression _ columns: sql_pack_expression __ "values" __ values: (h: sql_pack_expression q: (_ "," _ @sql_pack_expression)* { return [h, ...q] })
     { return { kind: "UntypedSQLInsertExpression", table, columns, values } }
+
+  sql_delete_expression
+    = "delete" __ "from" __ table: sql_from_expression where: (__ @sql_where_expression)?
+    { return { kind: "UntypedSQLDeleteExpression", table, where: where ?? undefined } }
+
+  sql_where_expression
+    = "where" __ cond: sql_expression
+    { return { kind: "UntypedSQLWhereExpression", cond } }
+
+  sql_or_expression
+    = head: sql_and_expression tail:(
+      (_ op: "or" _ right: sql_and_expression { return { kind: 'UntypedSQLInfixExpression', op, right }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
+
+  sql_and_expression
+    = head: sql_cmp_expression tail:(
+      (_ op: "and" _ right: sql_cmp_expression { return { kind: 'UntypedSQLInfixExpression', op, right }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
+
+  sql_cmp_expression
+    = head: sql_mul_expression tail:(
+      (_ op: ("=" / "!=" / "<=" / ">=" / "<" / ">") _ right: sql_mul_expression { return { kind: 'UntypedSQLInfixExpression', op, right }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
+
+  sql_mul_expression
+    = head: sql_add_expression tail:(
+      (_ op: ("*" / "/" / "%") _ right: sql_add_expression { return { kind: 'UntypedSQLInfixExpression', op, right }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
+
+  sql_add_expression
+    = head: sql_literal_expression tail:(
+      (_ op: ("+" / "-") _ right: sql_literal_expression { return { kind: 'UntypedSQLInfixExpression', op, right }})
+    )*
+      { return tail.reduce((t, h) => ({ ...h, left: t }), head) }
 
   sql_column_expression
     = expression: sql_expression alias: (__ "as" __ @identifier)?
@@ -2694,6 +3022,9 @@ const parser = generate(`
     { return { kind: "UntypedSQLPackExpression", values } }
 
   sql_expression
+    = sql_or_expression
+
+  sql_literal_expression
     = sql_column_identifier_expression
     / sql_string_expression
     / sql_integer_expression
@@ -2746,8 +3077,8 @@ const parser = generate(`
     { return { kind: "UntypedCaptureExpression", expression } }
 
   string_expression
-    = "\\"" chars: [^\\"]* "\\""
-    { return { kind: "UntypedStringExpression", value: chars.join('') } }
+    = "\\"" parts: ((chars: [^\\"$]+ { return chars.join('') }) / capture_expression)* "\\""
+    { return { kind: "UntypedStringExpression", parts } }
 
   identifier_expression
     = name: identifier
