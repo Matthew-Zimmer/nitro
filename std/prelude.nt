@@ -1,0 +1,17 @@
+export declare func html__html(children: html, _: str): html intrinsic
+export declare func html__head(children: html, _: str): html intrinsic
+export declare func html__title(children: html, _: str): html intrinsic
+export declare func html__body(children: html, _: str): html intrinsic
+export declare func html__h1(children: html, _: str): html intrinsic
+export declare func html__div(children: html, _: str): html intrinsic
+export declare func html__style(children: html, _: str): html intrinsic
+export declare func html__script(children: html, _: str): html intrinsic
+export declare func html__a(children: html, _: str): html intrinsic
+export declare func html__input(children: html, _: str): html intrinsic
+export declare func html__form(children: html, _: str): html intrinsic
+export declare func html__fieldset(children: html, _: str): html intrinsic
+export declare func html__button(children: html, _: str): html intrinsic
+export declare func html__label(children: html, _: str): html intrinsic
+
+export declare func sql__op_eq(l: str, r: str): bool intrinsic
+
