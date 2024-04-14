@@ -54,6 +54,10 @@ const parser = generate(`
     { return { kind: "IdentifierType", name } }
 
   definition
+    = export_definition
+    / exportable_definition
+
+  exportable_definition
     = function_definition
     / http_definition
     / declare_definition
@@ -61,6 +65,23 @@ const parser = generate(`
     / table_definition
     / raw_go_import_definition
     / raw_go_definition
+    / import_definition
+
+  export_definition
+    = "export" __ definition: exportable_definition
+    { return { kind: "UntypedExportDefinition", definition } }
+
+  import_definition
+    = "import" __ path: import_path modifier: ((__ "as" __ name: identifier { return { kind: "ImportAlias", name } }) / (__ "using" __ h: import_item t: (_ "," _ @import_item)* { return { kind: "ImportSelection", selections: [h, ...t] }}))?
+    { return { kind: "UntypedImportDefinition", path, modifier: modifier ?? undefined } }
+
+  import_path
+    = h: identifier t: (_ "." _ @identifier)*
+    { return [h, ...t] }
+
+  import_item
+    = name: identifier alias: (__ "as" __ @identifier)?
+    { return { name, alias: alias ?? undefined } }
 
   raw_go_definition
     = "#go" _ source: (c: [^#]* { return c.join('') }) _ "#end"
@@ -83,7 +104,7 @@ const parser = generate(`
     { return { kind: "UntypedTableDefinition", name, type } }
 
   declare_definition
-    = "declare" __ definition: definition
+    = "declare" __ definition: exportable_definition
     { return { kind: "UntypedDeclareDefinition", definition } }
 
   function_definition

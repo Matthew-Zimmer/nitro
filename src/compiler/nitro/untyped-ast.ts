@@ -8,12 +8,35 @@ export type UntypedNitroModule = {
 
 export type UntypedDefinition =
   | UntypedFunctionDefinition
+  | UntypedImportDefinition
+  | UntypedExportDefinition
   | UntypedHTTPDefinition
   | UntypedDeclareDefinition
   | UntypedTableDefinition
   | UntypedRawGoSourceDefinition
   | UntypedRawGoSourceImportDefinition
   | UntypedStructDefinition;
+
+export type UntypedImportDefinition = {
+  kind: "UntypedImportDefinition";
+  path: string[];
+  modifier?: ImportAlias | ImportSelection;
+};
+
+export type ImportAlias = {
+  kind: "ImportAlias";
+  alias: string;
+};
+
+export type ImportSelection = {
+  kind: "ImportSelection";
+  selections: { name: string; alias?: string }[];
+};
+
+export type UntypedExportDefinition = {
+  kind: "UntypedExportDefinition";
+  definition: UntypedDefinition;
+};
 
 export type UntypedRawGoSourceDefinition = {
   kind: "UntypedRawGoSourceDefinition";

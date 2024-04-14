@@ -484,6 +484,8 @@ export function def(d: Definition, components: Set<string>): GoDefinition[] {
     }
     case "DeclareDefinition":
     case "TableDefinition":
+    case "ExportDefinition":
+    case "ImportDefinition":
       return [];
     case "RawGoSourceDefinition":
       return [{ kind: "GoRawSourceDefinition", source: d.source }];

@@ -1,0 +1,13 @@
+export func page(title: str, children: html): html
+  <html>
+    <head>
+      <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <title>
+        ${title}
+      </title>
+    </head>
+    <body hx-boost="true">
+      ${children}
+    </body>
+  </html>

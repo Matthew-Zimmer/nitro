@@ -1,5 +1,6 @@
 import { HTTPVerb, HTTPPath, SQLInfixOperator } from "../common";
 import { Type } from "./types";
+import { ImportAlias, ImportSelection } from "./untyped-ast";
 
 export type NitroModule = {
   kind: "NitroModule";
@@ -10,10 +11,23 @@ export type Definition =
   | FunctionDefinition
   | HTTPDefinition
   | DeclareDefinition
+  | ImportDefinition
+  | ExportDefinition
   | StructDefinition
   | RawGoSourceDefinition
   | RawGoSourceImportDefinition
   | TableDefinition;
+
+export type ImportDefinition = {
+  kind: "ImportDefinition";
+  fileName: string;
+  modifier?: ImportAlias | ImportSelection;
+};
+
+export type ExportDefinition = {
+  kind: "ExportDefinition";
+  definition: Definition;
+};
 
 export type RawGoSourceDefinition = {
   kind: "RawGoSourceDefinition";

@@ -104,98 +104,302 @@ class Context {
   }
 }
 
-function extractNamedTypes(d: UntypedDefinition): [string, Type][] {
-  switch (d.kind) {
-    case "UntypedDeclareDefinition":
-      return extractNamedTypes(d.definition);
-    case "UntypedStructDefinition":
-      return [[d.name, { kind: "StructType", properties: d.properties }]];
-    case "UntypedFunctionDefinition":
-    case "UntypedHTTPDefinition":
-    case "UntypedTableDefinition":
-    case "UntypedRawGoSourceDefinition":
-    case "UntypedRawGoSourceImportDefinition":
-      return [];
-  }
+type ModuleExports = Map<string, { type: Type; isType: boolean }>;
+type ModuleContext = Map<string, ModuleExports>;
+
+function extractNamedTypes(
+  d: UntypedDefinition,
+  ctx: ModuleContext,
+  fileNames: Map<string, string>
+): [string, Type][] {
+  const imp = (d: UntypedDefinition): [string, Type][] => {
+    switch (d.kind) {
+      case "UntypedDeclareDefinition":
+        return imp(d.definition);
+      case "UntypedStructDefinition":
+        return [[d.name, { kind: "StructType", properties: d.properties }]];
+      case "UntypedImportDefinition": {
+        const modExports = ctx.get(fileNames.get(d.path.join("."))!)!;
+        switch (d.modifier?.kind) {
+          case undefined: {
+            return [
+              [
+                d.path[d.path.length - 1],
+                {
+                  kind: "StructType",
+                  properties: [...modExports.entries()]
+                    .filter((x) => x[1].isType)
+                    .map(([k, v]) => ({
+                      name: k,
+                      type: v.type,
+                    })),
+                },
+              ],
+            ];
+          }
+          case "ImportAlias": {
+            return [
+              [
+                d.modifier.alias,
+                {
+                  kind: "StructType",
+                  properties: [...modExports.entries()]
+                    .filter((x) => x[1].isType)
+                    .map(([k, v]) => ({
+                      name: k,
+                      type: v.type,
+                    })),
+                },
+              ],
+            ];
+          }
+          case "ImportSelection": {
+            const used: string[] = [];
+            const l: [string, Type][] = [];
+            for (const { name, alias } of d.modifier.selections) {
+              if (name === "*") {
+                l.push(
+                  ...[...modExports.entries()]
+                    .filter(([k, v]) => v.isType && !used.includes(k))
+                    .map(([k, v]) => [k, v.type] as [string, Type])
+                );
+              } else {
+                const v = modExports.get(name)!;
+                if (v.isType) {
+                  l.push([alias ?? name, v.type]);
+                }
+                used.push(name);
+              }
+            }
+
+            return l;
+          }
+        }
+      }
+      case "UntypedFunctionDefinition":
+      case "UntypedHTTPDefinition":
+      case "UntypedTableDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
+      case "UntypedExportDefinition":
+        return [];
+    }
+  };
+  return imp(d);
 }
 
-function extractTables(d: UntypedDefinition): [string, Type][] {
-  switch (d.kind) {
-    case "UntypedFunctionDefinition":
-    case "UntypedHTTPDefinition":
-    case "UntypedDeclareDefinition":
-    case "UntypedStructDefinition":
-    case "UntypedRawGoSourceDefinition":
-    case "UntypedRawGoSourceImportDefinition":
-      return [];
-    case "UntypedTableDefinition":
-      return [[d.name, d.type]];
-  }
+function extractTables(
+  d: UntypedDefinition,
+  ctx: ModuleContext,
+  fileNames: Map<string, string>
+): [string, Type][] {
+  const imp = (d: UntypedDefinition): [string, Type][] => {
+    switch (d.kind) {
+      case "UntypedFunctionDefinition":
+      case "UntypedHTTPDefinition":
+      case "UntypedDeclareDefinition":
+      case "UntypedStructDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
+      case "UntypedExportDefinition":
+        return [];
+      case "UntypedImportDefinition": {
+        // TODO?????????
+        return [];
+      }
+      case "UntypedTableDefinition":
+        return [[d.name, d.type]];
+    }
+  };
+  return imp(d);
 }
 
-function extractFunctionInfo(d: UntypedDefinition): [string, Type][] {
-  switch (d.kind) {
-    case "UntypedFunctionDefinition":
-      return [
-        [
-          d.name,
-          {
-            kind: "FunctionType",
-            from: d.parameters,
-            to: d.returnType,
-          },
-        ],
-      ];
-    case "UntypedDeclareDefinition":
-      return extractFunctionInfo(d.definition);
-    case "UntypedHTTPDefinition":
-    case "UntypedStructDefinition":
-    case "UntypedTableDefinition":
-    case "UntypedRawGoSourceDefinition":
-    case "UntypedRawGoSourceImportDefinition":
-      return [];
-  }
+function extractFunctionInfo(
+  d: UntypedDefinition,
+  ctx: ModuleContext,
+  fileNames: Map<string, string>
+): [string, Type][] {
+  const imp = (d: UntypedDefinition): [string, Type][] => {
+    switch (d.kind) {
+      case "UntypedFunctionDefinition":
+        return [
+          [
+            d.name,
+            {
+              kind: "FunctionType",
+              from: d.parameters,
+              to: d.returnType,
+            },
+          ],
+        ];
+      case "UntypedDeclareDefinition":
+        return imp(d.definition);
+      case "UntypedHTTPDefinition":
+      case "UntypedStructDefinition":
+      case "UntypedTableDefinition":
+      case "UntypedRawGoSourceDefinition":
+      case "UntypedRawGoSourceImportDefinition":
+      case "UntypedExportDefinition":
+        return [];
+      case "UntypedImportDefinition": {
+        const modExports = ctx.get(fileNames.get(d.path.join("."))!)!;
+        switch (d.modifier?.kind) {
+          case undefined: {
+            return [
+              [
+                d.path[d.path.length - 1],
+                {
+                  kind: "StructType",
+                  properties: [...modExports.entries()]
+                    .filter((x) => !x[1].isType)
+                    .map(([k, v]) => ({
+                      name: k,
+                      type: v.type,
+                    })),
+                },
+              ],
+            ];
+          }
+          case "ImportAlias": {
+            return [
+              [
+                d.modifier.alias,
+                {
+                  kind: "StructType",
+                  properties: [...modExports.entries()]
+                    .filter((x) => x[1].isType)
+                    .map(([k, v]) => ({
+                      name: k,
+                      type: v.type,
+                    })),
+                },
+              ],
+            ];
+          }
+          case "ImportSelection": {
+            const used: string[] = [];
+            const l: [string, Type][] = [];
+
+            for (const { name, alias } of d.modifier.selections) {
+              if (name === "*") {
+                l.push(
+                  ...[...modExports.entries()]
+                    .filter(([k, v]) => !v.isType && !used.includes(k))
+                    .map(([k, v]) => [k, v.type] as [string, Type])
+                );
+              } else {
+                const v = modExports.get(name)!;
+                if (!v.isType) {
+                  l.push([alias ?? name, v.type]);
+                }
+                used.push(name);
+              }
+            }
+
+            return l;
+          }
+        }
+      }
+    }
+  };
+  return imp(d);
+}
+
+function exportDefinition(
+  d: Definition,
+  ctx: ModuleContext
+): [string, { type: Type; isType: boolean }][] {
+  const imp = (d: Definition): [string, { type: Type; isType: boolean }][] => {
+    switch (d.kind) {
+      case "FunctionDefinition":
+        return [[d.name, { type: d.type, isType: false }]];
+      case "HTTPDefinition":
+        return [];
+      case "DeclareDefinition":
+        return imp(d.definition);
+      case "ImportDefinition":
+        return (() => {
+          const moduleExports = ctx.get(d.fileName)!;
+          switch (d.modifier?.kind) {
+            case "ImportAlias":
+            case undefined:
+              return [...moduleExports.entries()];
+            case "ImportSelection":
+              return d.modifier.selections.map((x) => [
+                x.alias ?? x.name,
+                moduleExports.get(x.name)!,
+              ]);
+          }
+        })();
+      case "ExportDefinition":
+        return [];
+      case "StructDefinition":
+        return [
+          [
+            d.name,
+            {
+              type: { kind: "StructType", properties: d.properties },
+              isType: true,
+            },
+          ],
+        ];
+      case "RawGoSourceDefinition":
+      case "RawGoSourceImportDefinition":
+        return [];
+      case "TableDefinition":
+        // todo think about tables
+        return [];
+      //return [[d.name, d.type]];
+    }
+  };
+  return imp(d);
 }
 
 function sqlInfixFuncName(op: SQLInfixOperator): string {
   switch (op) {
     case "=":
-      return `sql_op_eq`;
+      return `sql__op_eq`;
     case "!=":
-      return `sql_op_neq`;
+      return `sql__op_neq`;
     case "is":
-      return `sql_op_is`;
+      return `sql__op_is`;
     case "<":
-      return `sql_op_lt`;
+      return `sql__op_lt`;
     case ">":
-      return `sql_op_gt`;
+      return `sql__op_gt`;
     case "<=":
-      return `sql_op_lteq`;
+      return `sql__op_lteq`;
     case ">=":
-      return `sql_op_gteq`;
+      return `sql__op_gteq`;
     case "+":
-      return `sql_op_add`;
+      return `sql__op_add`;
     case "-":
-      return `sql_op_sub`;
+      return `sql__op_sub`;
     case "*":
-      return `sql_op_mul`;
+      return `sql__op_mul`;
     case "/":
-      return `sql_op_div`;
+      return `sql__op_div`;
     case "%":
-      return `sql_op_mod`;
+      return `sql__op_mod`;
     case "and":
-      return `sql_op_and`;
+      return `sql__op_and`;
     case "or":
-      return `sql_op_or`;
+      return `sql__op_or`;
   }
 }
 
-export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
+export function inferAndTypeCheck(
+  mod: UntypedNitroModule,
+  moduleCtx: ModuleContext,
+  fileNames: Map<string, string>
+): [NitroModule, ModuleExports] {
   const errors: string[] = [];
 
   // build a type lookup table
 
-  const _namedTypes = mod.definitions.flatMap(extractNamedTypes);
+  const _namedTypes = mod.definitions.flatMap((d) =>
+    extractNamedTypes(d, moduleCtx, fileNames)
+  );
   const namedTypes = new Map<string, Type>();
   for (const [name, ty] of _namedTypes) {
     if (namedTypes.has(name)) {
@@ -205,7 +409,9 @@ export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
   }
 
   // build a sql table lookup table
-  const _tables = mod.definitions.flatMap(extractTables);
+  const _tables = mod.definitions.flatMap((d) =>
+    extractTables(d, moduleCtx, fileNames)
+  );
   const tables = new Map<string, StructType>();
   for (const [name, ty] of _tables) {
     if (tables.has(name)) {
@@ -287,16 +493,21 @@ export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
 
   // variables
 
-  const functions = new Map(mod.definitions.flatMap(extractFunctionInfo));
+  const functions = new Map(
+    mod.definitions.flatMap((d) => extractFunctionInfo(d, moduleCtx, fileNames))
+  );
+
   const ctx = new Context(functions);
 
   let inDeclare = false;
+
+  const exports: ModuleExports = new Map();
 
   function attrs(
     tag: string,
     a: { name: string; value: UntypedSubHTMLExpression }[]
   ): { name: string; value: SubHTMLExpression }[] {
-    const componentType = functions.get(tag);
+    const componentType = functions.get(tag) ?? functions.get(`html__${tag}`);
 
     const attributes = a.map((x) => ({
       name: x.name,
@@ -904,7 +1115,7 @@ export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           type: {
             kind: "FunctionType",
             from: d.parameters,
-            to: expression.type,
+            to: d.returnType,
           },
         };
       }
@@ -958,6 +1169,29 @@ export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
           ...d,
           kind: "StructDefinition",
         };
+      case "UntypedExportDefinition": {
+        const definition = def(d.definition);
+
+        const defs = exportDefinition(definition, moduleCtx);
+        for (const [k, v] of defs) {
+          if (exports.has(k)) {
+            errors.push(`already exporting definition ${k}`);
+          }
+          exports.set(k, v);
+        }
+
+        return {
+          kind: "ExportDefinition",
+          definition,
+        };
+      }
+      case "UntypedImportDefinition": {
+        return {
+          kind: "ImportDefinition",
+          fileName: fileNames.get(d.path.join("."))!,
+          modifier: d.modifier,
+        };
+      }
     }
   }
 
@@ -967,8 +1201,11 @@ export function inferAndTypeCheck(mod: UntypedNitroModule): NitroModule {
     throw errors.join("\n\n");
   }
 
-  return {
-    kind: "NitroModule",
-    definitions,
-  };
+  return [
+    {
+      kind: "NitroModule",
+      definitions,
+    },
+    exports,
+  ];
 }

@@ -3,21 +3,31 @@ import { toGoMainModule, toGoMod, toGoSum } from "../compiler/go/lowering";
 import { parse } from "../compiler/nitro/grammar";
 import { rewriteToGo } from "../compiler/nitro/lowering";
 import { inferAndTypeCheck } from "../compiler/nitro/type-system";
+import { NitroProject } from "../compiler/nitro/modules";
+import { GoModule } from "../compiler/go/ast";
 
-export async function compile(args: string[]) {
+export async function compile() {
   try {
-    await rm("out", { recursive: true });
+    await rm(".out", { recursive: true });
   } catch {}
-  await mkdir("out");
-  await mkdir("out/log");
+  await mkdir(".out");
+  await mkdir(".out/log");
 
-  const nitroSource = (await readFile(args[0])).toString();
+  const project = new NitroProject(process.env.NITRO_HOME!, process.cwd());
 
-  const untypedMod = parse(nitroSource);
-  const typedMod = inferAndTypeCheck(untypedMod);
-  const goMod = rewriteToGo(typedMod);
+  const modules = project.compile();
 
-  await writeFile("out/main.go", toGoMainModule(goMod));
-  await writeFile("out/go.mod", toGoMod());
-  await writeFile("out/go.sum", toGoSum());
+  const goMod: GoModule = {
+    kind: "GoModule",
+    definitions: [],
+  };
+
+  for (const mod of modules) {
+    const m = rewriteToGo(mod);
+    goMod.definitions.push(...m.definitions);
+  }
+
+  await writeFile(".out/main.go", toGoMainModule(goMod));
+  await writeFile(".out/go.mod", toGoMod());
+  await writeFile(".out/go.sum", toGoSum());
 }
