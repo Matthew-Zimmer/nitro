@@ -1,4 +1,5 @@
-from std.uuid import uuid
+import std.uuid using uuid
+import components using page, row, textfield
 
 struct item {
   id: str,
@@ -6,25 +7,6 @@ struct item {
 }
 
 table item = item
-
-func page(title: str, children: html): html
-  <html>
-    <head>
-      <script src="https://unpkg.com/htmx.org@1.9.11"></script>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <title>
-        ${title}
-      </title>
-    </head>
-    <body hx-boost="true">
-      ${children}
-    </body>
-  </html>
-
-func row(children: html): html
-  <div class="flex flex-row gap-2">
-    ${children}
-  </div>
 
 get / ()
   <page title="hello">
@@ -72,13 +54,6 @@ get /item/new ()
     </form>
   </page>
 
-
-func textfield(label: str, name: str, error_message: str): html
-  <fieldset class="flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500" err=${error_message}>
-    <label for=${name}>${label}</label>
-    <input id=${name} class="border p-2 invalid:border-red-500" name=${name} required="true" />
-  </fieldset>
-
 get /item/${id}/edit ()
   <page title="App">
     <form hx-put="/item/${id}" class="flex flex-col gap-2 border p-10 border-black">
@@ -106,7 +81,6 @@ post /item (payload: create_item_input) {
   values 
     (${uuid()}, ${payload.name})
 }
-
 
 delete /item/${id} () {
   delete from item where id = ${id}

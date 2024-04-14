@@ -1,0 +1,6 @@
+
+export func textfield(label: str, name: str, error_message: str): html
+  <fieldset class="flex flex-col gap-1 invalid:after:content-[attr(err)] after:text-red-500" err=${error_message}>
+    <label for=${name}>${label}</label>
+    <input id=${name} class="border p-2 invalid:border-red-500" name=${name} required="true" />
+  </fieldset>
